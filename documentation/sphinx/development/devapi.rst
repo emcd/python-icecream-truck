@@ -27,5 +27,5 @@ Internal Development Interface
 Module ``ictruck.__``
 -------------------------------------------------------------------------------
 
-.. automodule:: ictruck.__
-   :ignore-module-all: true
+.. .. automodule:: ictruck.__
+..    :no-index:

@@ -92,6 +92,7 @@ class Instance(
     ] = _icecream.DEFAULT_OUTPUT_FUNCTION
 
 
+# pylint: disable=invalid-field-call
 class Module(
     metaclass = __.ImmutableDataclass, decorators = ( __.immutable, )
 ):
@@ -100,7 +101,7 @@ class Module(
     # TODO: Accretive set for active flavors.
     active_flavors: set[ int | str ] = (
         __.dcls.field( default_factory = set ) )
-    flavors: __.AccretiveDictionary[ int | str, Flavor ] = (
+    flavors: __.AccretiveDictionary[ int | str, Flavor ] = ( # pyright: ignore
         __.dcls.field( default_factory = __.AccretiveDictionary ) )
     formatter: __.typx.Annotated[
         __.typx.Optional[ __.typx.Callable[ [ __.typx.Any ], str ] ],
@@ -146,3 +147,4 @@ class Module(
                 Only applies to integer flavors and not named flavors.
             ''' ),
     ] = 9
+# pylint: enable=invalid-field-call
