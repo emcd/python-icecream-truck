@@ -27,7 +27,15 @@ from . import exceptions
 # --- END: Injected by Copier ---
 
 
+from .configuration import (
+    Flavor as FlavorConfiguration,
+    Instance as InstanceConfiguration,
+    Module as ModuleConfiguration,
+)
+
+
 __version__ = '1.0a0'
 
 
-# TODO: Reclassify package modules as immutable and concealed.
+# TODO: Also reclassify package modules as concealed.
+__.reclassify_modules_as_immutable( __name__ )

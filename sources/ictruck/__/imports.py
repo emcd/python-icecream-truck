@@ -27,12 +27,18 @@
 from __future__ import annotations
 
 import collections.abc as cabc
+import dataclasses as dcls
+import io
 import types
 
 import typing_extensions as typx
 # --- BEGIN: Injected by Copier ---
 
 # --- END: Injected by Copier ---
+
+from accretive.qaliases import AccretiveDictionary
+from frigid.qaliases import (
+    ImmutableDataclass, immutable, reclassify_modules_as_immutable )
 
 
 ComparisonResult: typx.TypeAlias = bool | types.NotImplementedType

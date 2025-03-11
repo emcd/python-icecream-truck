@@ -15,14 +15,18 @@ license = 'Apache-2.0'
 readme = { 'file' = 'README.rst', 'content-type' = 'text/x-rst' }
 requires-python = '>= 3.10'
 dependencies = [
+  'absence',
+  'accretive',
+  'frigid',
+  'icecream',
   'typing-extensions',
   # --- BEGIN: Injected by Copier ---
-  
+
   # --- END: Injected by Copier ---
 ]
 classifiers = [ # https://pypi.org/classifiers
   'Development Status :: 4 - Beta',
-  #'Intended Audience :: Developers',
+  'Intended Audience :: Developers',
   'License :: OSI Approved :: Apache Software License',
   'Programming Language :: Python :: 3 :: Only',
   'Programming Language :: Python :: 3.10',
@@ -31,10 +35,9 @@ classifiers = [ # https://pypi.org/classifiers
   'Programming Language :: Python :: 3.13',
   'Programming Language :: Python :: Implementation :: CPython',
   'Programming Language :: Python :: Implementation :: PyPy',
-  #'Topic :: Software Development',
-  # TODO: Add classifiers as appropriate.
+  'Topic :: Software Development',
 ]
-keywords = [ ] # TODO: Add keywords.
+keywords = [ 'icecream', 'debug', 'introspect' ]
 [[project.authors]]
 name = 'Eric McDonald'
 email = 'emcd@users.noreply.github.com'
@@ -70,7 +73,7 @@ directory = '.auxiliary/artifacts/hatch-build'
 only-include = [
   'sources/ictruck',
   # --- BEGIN: Injected by Copier ---
-  
+
   # --- END: Injected by Copier ---
 ]
 strict-naming = false
@@ -78,12 +81,12 @@ strict-naming = false
 only-include = [
   'sources/ictruck',
   # --- BEGIN: Injected by Copier ---
-  
+
   # --- END: Injected by Copier ---
 ]
 strict-naming = false
 [tool.hatch.build.targets.wheel.sources]
-'sources/ictruck' = 'ictruck' 
+'sources/ictruck' = 'ictruck'
 [tool.hatch.envs.default]
 python = '3.10'
 [tool.hatch.envs.develop]
@@ -110,14 +113,14 @@ dependencies = [
   'tryceratops',
   'yapf',
   # --- BEGIN: Injected by Copier ---
-  
-  
-  
+
+
+
   # --- END: Injected by Copier ---
 ]
 post-install-commands = [
   # --- BEGIN: Injected by Copier ---
-  
+
   # --- END: Injected by Copier ---
 ]
 [tool.hatch.envs.develop.env-vars]
@@ -143,7 +146,7 @@ linters = [
 packagers = [
   '''hatch build''',
   # --- BEGIN: Injected by Copier ---
-  
+
   # --- END: Injected by Copier ---
 ]
 testers = [
