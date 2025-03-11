@@ -1,0 +1,29 @@
+# Changes here will be overwritten by Copier
+_commit: v1.10
+_src_path: gh:emcd/python-project-common
+author_email: emcd@users.noreply.github.com
+author_name: Eric McDonald
+description: Flexible factory for Icecream debuggers.
+development_status: 4 - Beta
+distribution_name: icecream-truck
+enable_cli: false
+enable_property_tests: false
+enable_publication: true
+enable_rust_extension: false
+gh_owner: emcd
+include_data_resources: false
+inject_docstring_utils: false
+inject_exceptions: true
+inject_foundations: true
+inject_immutables: false
+package_name: ictruck
+project_name: python-icecream-truck
+pypy_versions:
+- '3.10'
+python_version_min: '3.10'
+python_versions:
+- '3.10'
+- '3.11'
+- '3.12'
+- '3.13'
+year_of_origin: 2025
