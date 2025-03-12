@@ -29,9 +29,10 @@ from . import exceptions
 
 from .configuration import (
     Flavor as FlavorConfiguration,
-    Instance as InstanceConfiguration,
     Module as ModuleConfiguration,
+    Vehicle as VehicleConfiguration,
 )
+from .vehicles import *
 
 
 __version__ = '1.0a0'

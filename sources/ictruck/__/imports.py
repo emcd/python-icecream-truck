@@ -36,9 +36,14 @@ import typing_extensions as typx
 
 # --- END: Injected by Copier ---
 
+from absence import Absential, absent, is_absent
 from accretive.qaliases import AccretiveDictionary
 from frigid.qaliases import (
-    ImmutableDataclass, immutable, reclassify_modules_as_immutable )
+    ImmutableDataclass,
+    ImmutableDictionary,
+    immutable,
+    reclassify_modules_as_immutable,
+)
 
 
 ComparisonResult: typx.TypeAlias = bool | types.NotImplementedType

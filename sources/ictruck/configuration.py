@@ -29,7 +29,7 @@ from . import __
 
 
 class Flavor(
-    metaclass = __.ImmutableDataclass, decorators = ( __.immutable, )
+    metaclass = __.ImmutableDataclass, # decorators = ( __.immutable, )
 ):
     ''' Per-flavor configuration. '''
     formatter: __.typx.Annotated[
@@ -70,36 +70,14 @@ class Flavor(
     ] = None
 
 
-class Instance(
-    metaclass = __.ImmutableDataclass, decorators = ( __.immutable, )
-):
-    ''' Per-instance configuration. '''
-
-    formatter: __.typx.Annotated[
-        # TODO? Union with enum for Null, Pretty, Rich.
-        __.typx.Callable[ [ __.typx.Any ], str ],
-        __.typx.Doc( ''' Callable to convert an argument to a string. ''' ),
-    ] = _icecream.DEFAULT_ARG_TO_STRING_FUNCTION
-    include_context: __.typx.Annotated[
-        bool, __.typx.Doc( ''' Include stack frame with output? ''' )
-    ] = False
-    prefix: __.typx.Annotated[
-        str, __.typx.Doc( ''' Prefix for output. ''' )
-    ] = _icecream.DEFAULT_PREFIX
-    printer: __.typx.Annotated[
-        __.io.TextIOBase | __.typx.Callable[ [ str ], None ],
-        __.typx.Doc( ''' Callable or stream to output text somewhere. ''' ),
-    ] = _icecream.DEFAULT_OUTPUT_FUNCTION
-
-
-# pylint: disable=invalid-field-call
 class Module(
-    metaclass = __.ImmutableDataclass, decorators = ( __.immutable, )
+    metaclass = __.ImmutableDataclass, # decorators = ( __.immutable, )
 ):
     ''' Per-module or per-package configuration. '''
 
+    # pylint: disable=invalid-field-call
     # TODO: Accretive set for active flavors.
-    active_flavors: set[ int | str ] = (
+    active_flavors: __.cabc.MutableSet[ int | str ] = (
         __.dcls.field( default_factory = set ) )
     flavors: __.AccretiveDictionary[ int | str, Flavor ] = ( # pyright: ignore
         __.dcls.field( default_factory = __.AccretiveDictionary ) )
@@ -147,4 +125,58 @@ class Module(
                 Only applies to integer flavors and not named flavors.
             ''' ),
     ] = 9
-# pylint: enable=invalid-field-call
+    # pylint: enable=invalid-field-call
+
+
+class Vehicle(
+    metaclass = __.ImmutableDataclass, # decorators = ( __.immutable, )
+):
+    ''' Per-vehicle configuration. '''
+
+    # pylint: disable=invalid-field-call
+    flavors: __.AccretiveDictionary[ int | str, Flavor ] = ( # pyright: ignore
+        __.dcls.field( default_factory = __.AccretiveDictionary ) )
+    formatter: __.typx.Annotated[
+        # TODO? Union with enum for Null, Pretty, Rich.
+        __.typx.Callable[ [ __.typx.Any ], str ],
+        __.typx.Doc( ''' Callable to convert an argument to a string. ''' ),
+    ] = _icecream.DEFAULT_ARG_TO_STRING_FUNCTION
+    include_context: __.typx.Annotated[
+        bool, __.typx.Doc( ''' Include stack frame with output? ''' )
+    ] = False
+    prefix: __.typx.Annotated[
+        str, __.typx.Doc( ''' Prefix for output. ''' )
+    ] = _icecream.DEFAULT_PREFIX
+    printer: __.typx.Annotated[
+        __.io.TextIOBase | __.typx.Callable[ [ str ], None ],
+        __.typx.Doc( ''' Callable or stream to output text somewhere. ''' ),
+    ] = _icecream.DEFAULT_OUTPUT_FUNCTION
+    # pylint: enable=invalid-field-call
+
+    @classmethod
+    def produce_with_trace_levels( # pylint: disable=too-many-arguments
+        selfclass,
+        # TODO: PEP 727 Doc objects for arguments.
+        # pylint: disable=unused-argument
+        flavors: __.Absential[
+            __.cabc.Mapping[ int | str, Flavor ] ] = __.absent,
+        formatter: __.Absential[
+            __.typx.Callable[ [ __.typx.Any ], str ] ] = __.absent,
+        include_context: __.Absential[ bool ] = __.absent,
+        prefix: __.Absential[ str ] = __.absent,
+        printer: __.Absential[
+            __.io.TextIOBase | __.typx.Callable[ [ str ], None ],
+        ] = __.absent,
+        # pylint: enable=unused-argument
+    ) -> __.typx.Self:
+        ''' Produces instance with default set of trace depths. '''
+        nomargs = { }
+        for aname in ( 'formatter', 'include_context', 'prefix', 'printer' ):
+            argument = locals( )[ aname ]
+            if not __.is_absent( argument ):
+                nomargs[ aname ] = argument
+        flavors_: dict[ int | str, Flavor ] = {
+            i: Flavor( prefix = f"TRACE{i}| " ) for i in range( 10 ) }
+        if not __.is_absent( flavors ): flavors_.update( flavors )
+        nomargs[ 'flavors' ] = flavors_
+        return selfclass( **nomargs ) # pyright: ignore
