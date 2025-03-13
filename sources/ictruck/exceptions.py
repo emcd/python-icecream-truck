@@ -18,19 +18,19 @@
 #============================================================================#
 
 
-''' Family of exceptions for package API.
-
-    * ``Omniexception``: Base for all package exceptions
-    * ``Omnierror``: Base for all package errors
-'''
+''' Family of exceptions for package API. '''
 
 
 from . import __
 
 
-class Omniexception( BaseException ):
+class Omniexception(
+    BaseException,
+    metaclass = __.ImmutableClass,
+    decorators = ( __.immutable, ),
+):
     ''' Base for all exceptions raised by package API. '''
-    # TODO: Class and instance attribute concealment and immutability.
+    # TODO: Class and instance attribute concealment.
 
     _attribute_visibility_includes_: __.cabc.Collection[ str ] = (
         frozenset( ( '__cause__', '__context__', ) ) )
@@ -38,3 +38,28 @@ class Omniexception( BaseException ):
 
 class Omnierror( Omniexception, Exception ):
     ''' Base for error exceptions raised by package API. '''
+
+
+class ArgumentClassInvalidity( Omnierror, TypeError ):
+    ''' Argument class is invalid. '''
+
+    def __init__( self, name: str, classes: type | tuple[ type, ... ] ):
+        if isinstance( classes, type ): classes = ( classes, )
+        cnames = ' | '.join( map(
+            lambda cls: f"{cls.__module__}.{cls.__qualname__}", classes ) )
+        super( ).__init__(
+            f"Argument {name!r} must be an instance of {cnames}." )
+
+
+class FlavorInavailability( Omnierror, ValueError ):
+    ''' Requested flavor is not available. '''
+
+    def __init__( self, flavor: int | str ):
+        super( ).__init__( f"Flavor {flavor!r} is not available." )
+
+
+class ModuleInferenceFailure( Omnierror, RuntimeError ):
+    ''' Failure to infer invoking module from call stack. '''
+
+    def __init__( self ):
+        super( ).__init__( "Could not infer invoking module from call stack." )

@@ -32,6 +32,9 @@ from . import configuration as _configuration
 from . import exceptions as _exceptions
 
 
+if __.typx.TYPE_CHECKING: import _typeshed # pylint: disable=import-error
+
+
 _builtins_alias_default = 'ictr'
 
 
@@ -97,6 +100,7 @@ class Truck(
 
     def __call__( self, flavor: int | str ) -> _icecream.IceCreamDebugger:
         ''' Vends flavor of Icecream debugger. '''
+        _assert_argument_class( 'flavor', flavor, ( int, str ) )
         mname = _discover_invoker_module_name( )
         cache_index = ( mname, flavor )
         if cache_index in self._debuggers: # pylint: disable=unsupported-membership-test
@@ -133,7 +137,9 @@ class Truck(
 
             If no configuration is provided, then a default is generated.
         '''
-        # TODO: Runtime checks of non-absent argument types.
+        _assert_argument_class( 'name', name, str )
+        _assert_argument_class(
+            'configuration', configuration, _configuration.Module )
         if __.is_absent( name ):
             name = _discover_invoker_module_name( )
         if __.is_absent( configuration ):
@@ -162,6 +168,14 @@ def install(
         Application developers should call this early before importing
         library packages which may also use the builtin truck.
     '''
+    # TODO: Deeper validation of active flavors and trace levels.
+    # TODO: Validate printer argument.
+    _assert_argument_class( 'alias', alias, str )
+    _assert_argument_class(
+        'active_flavors', active_flavors, ( __.cabc.Mapping, __.cabc.Set ) )
+    _assert_argument_class( 'generalcfg', generalcfg, _configuration.Vehicle )
+    _assert_argument_class(
+        'trace_levels', trace_levels, ( int, __.cabc.Mapping ) )
     nomargs: dict[ str, __.typx.Any ] = { }
     if not __.is_absent( generalcfg ):
         nomargs[ 'generalcfg' ] = generalcfg
@@ -195,11 +209,25 @@ def register_module(
         If no truck exists in builtins, installs one with a null printer.
         Intended for library developers to configure debugging flavors.
     '''
+    _assert_argument_class( 'name', name, str )
+    _assert_argument_class(
+        'configuration', configuration, _configuration.Module )
     if _builtins_alias_default not in __builtins__:
         truck = Truck( printer = lambda x: None )
         __builtins__[ _builtins_alias_default ] = truck
     else: truck = __builtins__[ _builtins_alias_default ]
     truck.register_module( name = name, configuration = configuration )
+
+
+# TODO? Decorator which validates arguments according to type signature.
+def _assert_argument_class(
+    name: str, value: __.typx.Any, classes: type | tuple[ type, ... ]
+) -> __.typx.Any:
+    # TODO? Use 'executing' package to infer name from value.
+    if __.is_absent( value ): return value
+    if not isinstance( value, classes ):
+        raise _exceptions.ArgumentClassInvalidity( name, classes )
+    return value
 
 
 def _calculate_effective_flavors(
@@ -224,6 +252,14 @@ def _calculate_effective_trace_level(
     return result
 
 
+def _dict_from_dataclass(
+    obj: _typeshed.DataclassInstance
+) -> dict[ str, __.typx.Any ]:
+    return {
+        field.name: getattr( obj, field.name )
+        for field in __.dcls.fields( obj ) }
+
+
 def _discover_invoker_module_name( ) -> str:
     frame = _inspect.currentframe( )
     while frame:
@@ -232,9 +268,7 @@ def _discover_invoker_module_name( ) -> str:
             if '<stdin>' == frame.f_code.co_filename: # pylint: disable=magic-value-comparison
                 name = '__main__'
                 break
-            # TODO: Raise appropriate error.
-            raise _exceptions.Omnierror(
-                "Could not determine calling module." )
+            raise _exceptions.ModuleInferenceFailure
         name = module.__name__
         if not name.startswith( f"{__package__}." ): break
         frame = frame.f_back
@@ -248,8 +282,9 @@ def _iterate_module_name_ancestry( name: str ) -> __.cabc.Iterator[ str ]:
 
 
 def _merge_ic_configuration(
-    base: dict[ str, __.typx.Any ], update: dict[ str, __.typx.Any ]
+    base: dict[ str, __.typx.Any ], update_obj: _typeshed.DataclassInstance
 ) -> dict[ str, __.typx.Any ]:
+    update: dict[ str, __.typx.Any ] = _dict_from_dataclass( update_obj )
     result: dict[ str, __.typx.Any ] = { }
     result[ 'flavors' ] = (
             dict( base.get( 'flavors', dict( ) ) )
@@ -271,25 +306,14 @@ def _produce_ic_configuration(
     has_flavor = flavor in vconfig.flavors
     if has_flavor:
         fconfig = vconfig.flavors[ flavor ]
-        configd = _merge_ic_configuration(
-            configd, {
-                field.name: getattr( fconfig, field.name )
-                for field in __.dcls.fields( fconfig ) } )
+        configd = _merge_ic_configuration( configd, fconfig )
     for mname_ in _iterate_module_name_ancestry( mname ):
         if mname_ not in vehicle.modulecfgs: continue
         mconfig = vehicle.modulecfgs[ mname_ ]
-        configd = _merge_ic_configuration(
-            configd, {
-                field.name: getattr( mconfig, field.name )
-                for field in __.dcls.fields( mconfig ) } )
+        configd = _merge_ic_configuration( configd, mconfig )
         if flavor not in mconfig.flavors: continue
         has_flavor = True
         fconfig = mconfig.flavors[ flavor ]
-        configd = _merge_ic_configuration(
-            configd, {
-                field.name: getattr( fconfig, field.name )
-                for field in __.dcls.fields( fconfig ) } )
-    if not has_flavor:
-        # TODO: Raise appropriate error.
-        raise _exceptions.Omnierror( f"Flavor {flavor!r} does not exist." )
+        configd = _merge_ic_configuration( configd, fconfig )
+    if not has_flavor: raise _exceptions.FlavorInavailability( flavor )
     return __.ImmutableDictionary( configd )
