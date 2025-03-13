@@ -38,6 +38,27 @@ if __.typx.TYPE_CHECKING: import _typeshed # pylint: disable=import-error
 _builtins_alias_default = 'ictr'
 
 
+def _validate_arguments( function: __.cabc.Callable[ ..., __.typx.Any ] ):
+
+    @__.funct.wraps( function )
+    def validate( *posargs: __.typx.Any, **nomargs: __.typx.Any ):
+        ''' Validates arguments before invocation. '''
+        signature = __.inspect.signature( function )
+        inspectee = signature.bind( *posargs, **nomargs )
+        inspectee.apply_defaults( )
+        for name, value in inspectee.arguments.items( ):
+            param = signature.parameters[ name ]
+            annotation = param.annotation
+            if __.is_absent( value ): continue
+            if annotation is param.empty: continue
+            classes = _reduce_annotation( annotation )
+            if not isinstance( value, classes ):
+                raise _exceptions.ArgumentClassInvalidity( name, classes )
+        return function( *posargs, **nomargs )
+
+    return validate
+
+
 class Truck(
     metaclass = __.ImmutableDataclass, # decorators = ( __.immutable, )
 ):
@@ -98,9 +119,9 @@ class Truck(
     ] = __.dcls.field( default_factory = __.AccretiveDictionary ) # pyright: ignore
     # pylint: enable=invalid-field-call
 
+    @_validate_arguments
     def __call__( self, flavor: int | str ) -> _icecream.IceCreamDebugger:
         ''' Vends flavor of Icecream debugger. '''
-        _assert_argument_class( 'flavor', flavor, ( int, str ) )
         mname = _discover_invoker_module_name( )
         cache_index = ( mname, flavor )
         if cache_index in self._debuggers: # pylint: disable=unsupported-membership-test
@@ -125,6 +146,7 @@ class Truck(
         self._debuggers[ cache_index ] = debugger # pylint: disable=unsupported-assignment-operation
         return debugger
 
+    @_validate_arguments
     def register_module(
         self,
         name: __.Absential[ str ] = __.absent,
@@ -137,9 +159,6 @@ class Truck(
 
             If no configuration is provided, then a default is generated.
         '''
-        _assert_argument_class( 'name', name, str )
-        _assert_argument_class(
-            'configuration', configuration, _configuration.Module )
         if __.is_absent( name ):
             name = _discover_invoker_module_name( )
         if __.is_absent( configuration ):
@@ -147,6 +166,7 @@ class Truck(
         self.modulecfgs[ name ] = configuration # pylint: disable=unsupported-assignment-operation
 
 
+@_validate_arguments
 def install(
     alias: str = _builtins_alias_default,
     active_flavors: __.Absential[
@@ -170,12 +190,6 @@ def install(
     '''
     # TODO: Deeper validation of active flavors and trace levels.
     # TODO: Validate printer argument.
-    _assert_argument_class( 'alias', alias, str )
-    _assert_argument_class(
-        'active_flavors', active_flavors, ( __.cabc.Mapping, __.cabc.Set ) )
-    _assert_argument_class( 'generalcfg', generalcfg, _configuration.Vehicle )
-    _assert_argument_class(
-        'trace_levels', trace_levels, ( int, __.cabc.Mapping ) )
     nomargs: dict[ str, __.typx.Any ] = { }
     if not __.is_absent( generalcfg ):
         nomargs[ 'generalcfg' ] = generalcfg
@@ -200,6 +214,7 @@ def install(
     return truck
 
 
+@_validate_arguments
 def register_module(
     name: __.Absential[ str ] = __.absent,
     configuration: __.Absential[ _configuration.Module ] = __.absent,
@@ -209,25 +224,11 @@ def register_module(
         If no truck exists in builtins, installs one with a null printer.
         Intended for library developers to configure debugging flavors.
     '''
-    _assert_argument_class( 'name', name, str )
-    _assert_argument_class(
-        'configuration', configuration, _configuration.Module )
     if _builtins_alias_default not in __builtins__:
         truck = Truck( printer = lambda x: None )
         __builtins__[ _builtins_alias_default ] = truck
     else: truck = __builtins__[ _builtins_alias_default ]
     truck.register_module( name = name, configuration = configuration )
-
-
-# TODO? Decorator which validates arguments according to type signature.
-def _assert_argument_class(
-    name: str, value: __.typx.Any, classes: type | tuple[ type, ... ]
-) -> __.typx.Any:
-    # TODO? Use 'executing' package to infer name from value.
-    if __.is_absent( value ): return value
-    if not isinstance( value, classes ):
-        raise _exceptions.ArgumentClassInvalidity( name, classes )
-    return value
 
 
 def _calculate_effective_flavors(
@@ -317,3 +318,24 @@ def _produce_ic_configuration(
         configd = _merge_ic_configuration( configd, fconfig )
     if not has_flavor: raise _exceptions.FlavorInavailability( flavor )
     return __.ImmutableDictionary( configd )
+
+
+# pylint: disable=eval-used
+def _reduce_annotation( annotation: __.typx.Any ) -> tuple[ type, ... ]:
+    origin = __.typx.get_origin( annotation )
+    if origin is None:
+        obj = (
+            eval( annotation ) if isinstance( annotation, str ) # nosec: B307
+            else annotation )
+        if isinstance( obj, __.types.UnionType ):
+            return tuple( __.itert.chain.from_iterable(
+                map( _reduce_annotation, __.typx.get_args( obj ) ) ) )
+        return ( obj, )
+    if origin is __.typx.Annotated:
+        return _reduce_annotation( annotation.__origin__ )
+    if origin is __.typx.Union:
+        return tuple( __.itert.chain.from_iterable(
+            map( _reduce_annotation, __.typx.get_args( origin ) ) ) )
+    # TODO? Other special forms.
+    return ( origin, )
+# pylint: enable=eval-used
