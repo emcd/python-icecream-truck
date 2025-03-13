@@ -32,23 +32,33 @@ from . import configuration as _configuration
 from . import exceptions as _exceptions
 
 
+_builtins_alias_default = 'ictr'
+
+
 class Truck(
     metaclass = __.ImmutableDataclass, # decorators = ( __.immutable, )
 ):
     ''' Vends flavors of Icecream debugger. '''
 
     # pylint: disable=invalid-field-call
+    active_flavors: __.typx.Annotated[
+        __.cabc.Mapping[ str | None, __.cabc.Set[ int | str ] ],
+        __.typx.Doc(
+            ''' Mapping of module names to active flavor sets.
+
+                Key ``None`` applies globally. Module-specific entries
+                override globals for that module.
+            ''' ),
+    ] = __.dcls.field( default_factory = __.ImmutableDictionary ) # pyright: ignore
     generalcfg: __.typx.Annotated[
         _configuration.Vehicle,
         __.typx.Doc(
-            ''' General instance configuration.
+            ''' General configuration.
 
                 Top of configuration inheritance hierarchy.
                 Default is suitable for application use.
-                Library developers should provide a no-op printer.
             ''' ),
-    ] = __.dcls.field(
-        default_factory = _configuration.Vehicle.produce_with_trace_levels )
+    ] = __.dcls.field( default_factory = _configuration.Vehicle )
     modulecfgs: __.typx.Annotated[
         __.AccretiveDictionary[ str, _configuration.Module ],
         __.typx.Doc(
@@ -59,25 +69,56 @@ class Truck(
                 configruration.
             ''' ),
     ] = __.dcls.field( default_factory = __.AccretiveDictionary ) # pyright: ignore
+    printer: __.typx.Annotated[
+        __.io.TextIOBase | __.typx.Callable[ [ str ], None ],
+        __.typx.Doc(
+            ''' Callable or stream to output text somewhere.
+
+                Application developers decide how and where output appears.
+            ''' ),
+    ] = _icecream.DEFAULT_OUTPUT_FUNCTION
+    trace_levels: __.typx.Annotated[
+        __.cabc.Mapping[ str | None, int ],
+        __.typx.Doc(
+            ''' Mapping of module names to maximum trace depths.
+
+                Key ``None`` applies globally. Module-specific entries
+                override globals for that module.
+            ''' ),
+    ] = __.dcls.field(
+        default_factory = lambda: __.ImmutableDictionary( { None: -1 } ) )
+    _debuggers: __.typx.Annotated[
+        __.AccretiveDictionary[
+            tuple[ str, int | str ], _icecream.IceCreamDebugger ],
+        __.typx.Doc(
+            ''' Cache of debugger instances by module and flavor. ''' ),
+    ] = __.dcls.field( default_factory = __.AccretiveDictionary ) # pyright: ignore
     # pylint: enable=invalid-field-call
 
     def __call__( self, flavor: int | str ) -> _icecream.IceCreamDebugger:
         ''' Vends flavor of Icecream debugger. '''
         mname = _discover_invoker_module_name( )
-        # TODO? Caching of debuggers.
+        cache_index = ( mname, flavor )
+        if cache_index in self._debuggers: # pylint: disable=unsupported-membership-test
+            return self._debuggers[ cache_index ] # pylint: disable=unsubscriptable-object
         configuration = _produce_ic_configuration( self, mname, flavor )
+        if isinstance( self.printer, __.io.TextIOBase ):
+            printer = __.funct.partial( print, file = self.printer )
+        else: printer = self.printer
         debugger = _icecream.IceCreamDebugger(
             argToStringFunction = configuration[ 'formatter' ],
             includeContext = configuration[ 'include_context' ],
-            outputFunction = configuration[ 'printer' ],
+            outputFunction = printer,
             prefix = configuration[ 'prefix' ] )
         if isinstance( flavor, int ):
-            debugger.enabled = (
-                flavor <= configuration.get( 'trace_level', -1 ) )
+            trace_level = (
+                _calculate_effective_trace_level( self.trace_levels, mname) )
+            debugger.enabled = flavor <= trace_level
         elif isinstance( flavor, str ):
-            debugger.enabled = (
-                flavor in configuration.get(
-                    'active_flavors', set( ) ) ) # pyright: ignore
+            active_flavors = (
+                _calculate_effective_flavors( self.active_flavors, mname ) )
+            debugger.enabled = flavor in active_flavors
+        self._debuggers[ cache_index ] = debugger # pylint: disable=unsupported-assignment-operation
         return debugger
 
     def register_module(
@@ -98,6 +139,89 @@ class Truck(
         if __.is_absent( configuration ):
             configuration = _configuration.Module( )
         self.modulecfgs[ name ] = configuration # pylint: disable=unsupported-assignment-operation
+
+
+def install(
+    alias: str = _builtins_alias_default,
+    active_flavors: __.Absential[
+        __.typx.Union[
+            __.cabc.Set[ int | str ],
+            __.cabc.Mapping[ str | None, __.cabc.Set[ int | str ] ],
+        ]
+    ] = __.absent,
+    generalcfg: __.Absential[ _configuration.Vehicle ] = __.absent,
+    printer: __.Absential[
+        __.io.TextIOBase | __.typx.Callable[ [ str ], None ]
+    ] = __.absent,
+    trace_levels: __.Absential[
+        int | __.cabc.Mapping[ str | None, int ]
+    ] = __.absent,
+) -> Truck:
+    ''' Installs configured truck into builtins.
+
+        Application developers should call this early before importing
+        library packages which may also use the builtin truck.
+    '''
+    nomargs: dict[ str, __.typx.Any ] = { }
+    if not __.is_absent( generalcfg ):
+        nomargs[ 'generalcfg' ] = generalcfg
+    if not __.is_absent( printer ):
+        nomargs[ 'printer' ] = printer
+    if not __.is_absent( active_flavors ):
+        if isinstance( active_flavors, __.cabc.Set ):
+            nomargs[ 'active_flavors' ] = __.ImmutableDictionary(
+                { None: set( active_flavors ) } )
+        else:
+            nomargs[ 'active_flavors' ] = __.ImmutableDictionary( {
+                mname: set( flavors )
+                for mname, flavors in active_flavors.items( ) } )
+    if not __.is_absent( trace_levels ):
+        if isinstance( trace_levels, int ):
+            nomargs[ 'trace_levels' ] = __.ImmutableDictionary(
+                { None: trace_levels } )
+        else:
+            nomargs[ 'trace_levels' ] = __.ImmutableDictionary( trace_levels )
+    truck = Truck( **nomargs )
+    __builtins__[ alias ] = truck
+    return truck
+
+
+def register_module(
+    name: __.Absential[ str ] = __.absent,
+    configuration: __.Absential[ _configuration.Module ] = __.absent,
+) -> None:
+    ''' Registers module configuration on the builtin truck.
+
+        If no truck exists in builtins, installs one with a null printer.
+        Intended for library developers to configure debugging flavors.
+    '''
+    if _builtins_alias_default not in __builtins__:
+        truck = Truck( printer = lambda x: None )
+        __builtins__[ _builtins_alias_default ] = truck
+    else: truck = __builtins__[ _builtins_alias_default ]
+    truck.register_module( name = name, configuration = configuration )
+
+
+def _calculate_effective_flavors(
+    flavors: __.cabc.Mapping[ str | None, __.cabc.Set[ int | str ] ],
+    mname: str,
+) -> __.cabc.Set[ int | str ]:
+    result = set( flavors.get( None, set( ) ) )
+    for mname_ in _iterate_module_name_ancestry( mname ):
+        if mname_ in flavors:
+            result |= flavors[ mname_ ]
+    return result
+
+
+def _calculate_effective_trace_level(
+    levels: __.cabc.Mapping[ str | None, int ],
+    mname: str,
+) -> int:
+    result = levels.get( None, -1 )
+    for mname_ in _iterate_module_name_ancestry( mname ):
+        if mname_ in levels:
+            result = levels[ mname_ ]
+    return result
 
 
 def _discover_invoker_module_name( ) -> str:
@@ -127,15 +251,10 @@ def _merge_ic_configuration(
     base: dict[ str, __.typx.Any ], update: dict[ str, __.typx.Any ]
 ) -> dict[ str, __.typx.Any ]:
     result: dict[ str, __.typx.Any ] = { }
-    result[ 'active_flavors' ] = (
-            set( base.get( 'active_flavors', set( ) ) )
-        |   set( update.get( 'active_flavors', set( ) ) ) )
     result[ 'flavors' ] = (
             dict( base.get( 'flavors', dict( ) ) )
         |   dict( update.get( 'flavors', dict( ) ) ) )
-    for ename in (
-        'formatter', 'include_context', 'prefix', 'printer', 'trace_level'
-    ):
+    for ename in ( 'formatter', 'include_context', 'prefix' ):
         uvalue = update.get( ename )
         if uvalue is not None: result[ ename ] = uvalue
         elif ename in base: result[ ename ] = base[ ename ]

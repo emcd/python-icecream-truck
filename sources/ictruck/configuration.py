@@ -28,6 +28,11 @@ import icecream as _icecream
 from . import __
 
 
+def _produce_default_flavors( ) -> __.AccretiveDictionary[ int | str, Flavor ]:
+    return __.AccretiveDictionary(
+        { i: Flavor( prefix = f"TRACE{i}| " ) for i in range( 10 ) } )
+
+
 class Flavor(
     metaclass = __.ImmutableDataclass, # decorators = ( __.immutable, )
 ):
@@ -54,18 +59,6 @@ class Flavor(
             ''' Prefix for output.
 
                 Default ``None`` inherits from module configuration.
-            ''' )
-    ] = None
-    printer: __.typx.Annotated[
-        __.typx.Optional[
-            __.io.TextIOBase | __.typx.Callable[ [ str ], None ] ],
-        __.typx.Doc(
-            ''' Callable or stream to output text somewhere.
-
-                Default ``None`` inherits from module configuration.
-
-                Note: Library developers should never set this. Application
-                developers decide how and where output appears.
             ''' ),
     ] = None
 
@@ -76,9 +69,6 @@ class Module(
     ''' Per-module or per-package configuration. '''
 
     # pylint: disable=invalid-field-call
-    # TODO: Accretive set for active flavors.
-    active_flavors: __.cabc.MutableSet[ int | str ] = (
-        __.dcls.field( default_factory = set ) )
     flavors: __.AccretiveDictionary[ int | str, Flavor ] = ( # pyright: ignore
         __.dcls.field( default_factory = __.AccretiveDictionary ) )
     formatter: __.typx.Annotated[
@@ -103,28 +93,8 @@ class Module(
             ''' Prefix for output.
 
                 Default ``None`` inherits from instance configuration.
-            ''' )
-    ] = None
-    printer: __.typx.Annotated[
-        __.typx.Optional[
-            __.io.TextIOBase | __.typx.Callable[ [ str ], None ] ],
-        __.typx.Doc(
-            ''' Callable or stream to output text somewhere.
-
-                Default ``None`` inherits from instance configuration.
-
-                Note: Library developers should never set this. Application
-                developers decide how and where output appears.
             ''' ),
     ] = None
-    trace_level: __.typx.Annotated[
-        int,
-        __.typx.Doc(
-            ''' Maximum trace depth for which to activate debuggers.
-
-                Only applies to integer flavors and not named flavors.
-            ''' ),
-    ] = 9
     # pylint: enable=invalid-field-call
 
 
@@ -135,7 +105,7 @@ class Vehicle(
 
     # pylint: disable=invalid-field-call
     flavors: __.AccretiveDictionary[ int | str, Flavor ] = ( # pyright: ignore
-        __.dcls.field( default_factory = __.AccretiveDictionary ) )
+        __.dcls.field( default_factory = _produce_default_flavors ) )
     formatter: __.typx.Annotated[
         # TODO? Union with enum for Null, Pretty, Rich.
         __.typx.Callable[ [ __.typx.Any ], str ],
@@ -147,36 +117,4 @@ class Vehicle(
     prefix: __.typx.Annotated[
         str, __.typx.Doc( ''' Prefix for output. ''' )
     ] = _icecream.DEFAULT_PREFIX
-    printer: __.typx.Annotated[
-        __.io.TextIOBase | __.typx.Callable[ [ str ], None ],
-        __.typx.Doc( ''' Callable or stream to output text somewhere. ''' ),
-    ] = _icecream.DEFAULT_OUTPUT_FUNCTION
     # pylint: enable=invalid-field-call
-
-    @classmethod
-    def produce_with_trace_levels( # pylint: disable=too-many-arguments
-        selfclass,
-        # TODO: PEP 727 Doc objects for arguments.
-        # pylint: disable=unused-argument
-        flavors: __.Absential[
-            __.cabc.Mapping[ int | str, Flavor ] ] = __.absent,
-        formatter: __.Absential[
-            __.typx.Callable[ [ __.typx.Any ], str ] ] = __.absent,
-        include_context: __.Absential[ bool ] = __.absent,
-        prefix: __.Absential[ str ] = __.absent,
-        printer: __.Absential[
-            __.io.TextIOBase | __.typx.Callable[ [ str ], None ],
-        ] = __.absent,
-        # pylint: enable=unused-argument
-    ) -> __.typx.Self:
-        ''' Produces instance with default set of trace depths. '''
-        nomargs = { }
-        for aname in ( 'formatter', 'include_context', 'prefix', 'printer' ):
-            argument = locals( )[ aname ]
-            if not __.is_absent( argument ):
-                nomargs[ aname ] = argument
-        flavors_: dict[ int | str, Flavor ] = {
-            i: Flavor( prefix = f"TRACE{i}| " ) for i in range( 10 ) }
-        if not __.is_absent( flavors ): flavors_.update( flavors )
-        nomargs[ 'flavors' ] = flavors_
-        return selfclass( **nomargs ) # pyright: ignore
