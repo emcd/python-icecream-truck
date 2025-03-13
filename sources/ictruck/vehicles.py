@@ -23,8 +23,6 @@
 
 from __future__ import annotations
 
-import inspect as _inspect
-
 import icecream as _icecream
 
 from . import __
@@ -32,7 +30,7 @@ from . import configuration as _configuration
 from . import exceptions as _exceptions
 
 
-if __.typx.TYPE_CHECKING: import _typeshed # pylint: disable=import-error
+if __.typx.TYPE_CHECKING: import _typeshed # pylint: disable=import-error,import-private-name
 
 
 _builtins_alias_default = 'ictr'
@@ -93,14 +91,23 @@ class Truck(
                 configruration.
             ''' ),
     ] = __.dcls.field( default_factory = __.AccretiveDictionary ) # pyright: ignore
-    printer: __.typx.Annotated[
-        __.io.TextIOBase | __.typx.Callable[ [ str ], None ],
+    printer_factory: __.typx.Annotated[
+        __.typx.Union[
+            __.io.TextIOBase,
+            __.cabc.Callable[
+                [ str, int | str ], __.cabc.Callable[ [ str ], None ] ],
+        ],
         __.typx.Doc(
-            ''' Callable or stream to output text somewhere.
+            ''' Factory which produces callables to output text somewhere.
 
-                Application developers decide how and where output appears.
+                May also be writable text stream.
+                Factories take two arguments, module name and flavor, and
+                return a callable which takes one argument, the string
+                produced by a formatter.
             ''' ),
-    ] = _icecream.DEFAULT_OUTPUT_FUNCTION
+    ] = __.dcls.field(
+        default_factory = (
+            lambda: lambda mname, flavor: _icecream.DEFAULT_OUTPUT_FUNCTION ) )
     trace_levels: __.typx.Annotated[
         __.cabc.Mapping[ str | None, int ],
         __.typx.Doc(
@@ -127,9 +134,9 @@ class Truck(
         if cache_index in self._debuggers: # pylint: disable=unsupported-membership-test
             return self._debuggers[ cache_index ] # pylint: disable=unsubscriptable-object
         configuration = _produce_ic_configuration( self, mname, flavor )
-        if isinstance( self.printer, __.io.TextIOBase ):
-            printer = __.funct.partial( print, file = self.printer )
-        else: printer = self.printer
+        if isinstance( self.printer_factory, __.io.TextIOBase ):
+            printer = __.funct.partial( print, file = self.printer_factory )
+        else: printer = self.printer_factory( mname, flavor ) # pylint: disable=not-callable
         debugger = _icecream.IceCreamDebugger(
             argToStringFunction = configuration[ 'formatter' ],
             includeContext = configuration[ 'include_context' ],
@@ -172,13 +179,14 @@ def install(
     active_flavors: __.Absential[
         __.typx.Union[
             __.cabc.Set[ int | str ],
-            __.cabc.Mapping[ str | None, __.cabc.Set[ int | str ] ],
-        ]
+            __.cabc.Mapping[ str | None, __.cabc.Set[ int | str ] ] ]
     ] = __.absent,
     generalcfg: __.Absential[ _configuration.Vehicle ] = __.absent,
-    printer: __.Absential[
-        __.io.TextIOBase | __.typx.Callable[ [ str ], None ]
-    ] = __.absent,
+    printer_factory: __.Absential[ __.typx.Union[
+            __.io.TextIOBase,
+            __.typx.Callable[
+                [ str, int | str ], __.typx.Callable[ [ str ], None ] ],
+    ] ] = __.absent,
     trace_levels: __.Absential[
         int | __.cabc.Mapping[ str | None, int ]
     ] = __.absent,
@@ -187,14 +195,16 @@ def install(
 
         Application developers should call this early before importing
         library packages which may also use the builtin truck.
+
+        Library developers should call :py:func:`register_module` instead.
     '''
     # TODO: Deeper validation of active flavors and trace levels.
-    # TODO: Validate printer argument.
+    # TODO: Deeper validation of printer factory.
     nomargs: dict[ str, __.typx.Any ] = { }
     if not __.is_absent( generalcfg ):
         nomargs[ 'generalcfg' ] = generalcfg
-    if not __.is_absent( printer ):
-        nomargs[ 'printer' ] = printer
+    if not __.is_absent( printer_factory ):
+        nomargs[ 'printer_factory' ] = printer_factory
     if not __.is_absent( active_flavors ):
         if isinstance( active_flavors, __.cabc.Set ):
             nomargs[ 'active_flavors' ] = __.ImmutableDictionary(
@@ -221,11 +231,15 @@ def register_module(
 ) -> None:
     ''' Registers module configuration on the builtin truck.
 
-        If no truck exists in builtins, installs one with a null printer.
-        Intended for library developers to configure debugging flavors.
+        If no truck exists in builtins, installs one which produces null
+        printers.
+
+        Intended for library developers to configure debugging flavors
+        without overriding anything set by the application or other libraries.
+        Application developers should call :py:func:`install` instead.
     '''
     if _builtins_alias_default not in __builtins__:
-        truck = Truck( printer = lambda x: None )
+        truck = Truck( printer_factory = lambda mname, flavor: lambda x: None )
         __builtins__[ _builtins_alias_default ] = truck
     else: truck = __builtins__[ _builtins_alias_default ]
     truck.register_module( name = name, configuration = configuration )
@@ -262,9 +276,9 @@ def _dict_from_dataclass(
 
 
 def _discover_invoker_module_name( ) -> str:
-    frame = _inspect.currentframe( )
+    frame = __.inspect.currentframe( )
     while frame:
-        module = _inspect.getmodule( frame )
+        module = __.inspect.getmodule( frame )
         if module is None:
             if '<stdin>' == frame.f_code.co_filename: # pylint: disable=magic-value-comparison
                 name = '__main__'

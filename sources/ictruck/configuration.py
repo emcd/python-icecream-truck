@@ -29,8 +29,8 @@ from . import __
 
 
 def _produce_default_flavors( ) -> __.AccretiveDictionary[ int | str, Flavor ]:
-    return __.AccretiveDictionary(
-        { i: Flavor( prefix = f"TRACE{i}| " ) for i in range( 10 ) } )
+    return __.AccretiveDictionary( {
+        i: Flavor( prefix = f"TRACE{i}| " ) for i in range( 10 ) } )
 
 
 class Flavor(
