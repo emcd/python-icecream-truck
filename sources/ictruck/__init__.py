@@ -32,7 +32,8 @@ from .configuration import (
     Module as ModuleConfiguration,
     Vehicle as VehicleConfiguration,
 )
-from .specialists import *
+from .exceptions import *
+from .recipes import *
 from .vehicles import *
 
 
