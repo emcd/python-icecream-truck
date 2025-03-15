@@ -7,7 +7,7 @@ description: Flexible factory for Icecream debuggers.
 development_status: 4 - Beta
 distribution_name: icecream-truck
 enable_cli: false
-enable_property_tests: false
+enable_property_tests: true
 enable_publication: true
 enable_rust_extension: false
 gh_owner: emcd

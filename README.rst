@@ -235,6 +235,10 @@ for details.
    :alt: Ruff
    :target: https://github.com/astral-sh/ruff
 
+.. image:: https://img.shields.io/badge/hypothesis-tested-brightgreen.svg
+   :alt: Hypothesis
+   :target: https://hypothesis.readthedocs.io/en/latest/
+
 .. image:: https://img.shields.io/pypi/implementation/icecream-truck
    :alt: PyPI - Implementation
    :target: https://pypi.org/project/icecream-truck/
