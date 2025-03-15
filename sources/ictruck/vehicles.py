@@ -30,7 +30,8 @@ from . import configuration as _configuration
 from . import exceptions as _exceptions
 
 
-if __.typx.TYPE_CHECKING: import _typeshed # pylint: disable=import-error,import-private-name
+if __.typx.TYPE_CHECKING:
+    import _typeshed # pylint: disable=import-error,import-private-name
 
 
 _builtins_alias_default = 'ictr'
@@ -64,7 +65,7 @@ class Truck(
 
     # pylint: disable=invalid-field-call
     active_flavors: __.typx.Annotated[
-        __.cabc.Mapping[ str | None, __.cabc.Set[ int | str ] ],
+        ActiveFlavorsRegistry,
         __.typx.Doc(
             ''' Mapping of module names to active flavor sets.
 
@@ -92,11 +93,7 @@ class Truck(
             ''' ),
     ] = __.dcls.field( default_factory = __.AccretiveDictionary ) # pyright: ignore
     printer_factory: __.typx.Annotated[
-        __.typx.Union[
-            __.io.TextIOBase,
-            __.cabc.Callable[
-                [ str, int | str ], __.cabc.Callable[ [ str ], None ] ],
-        ],
+        PrinterFactoryUnion,
         __.typx.Doc(
             ''' Factory which produces callables to output text somewhere.
 
@@ -109,7 +106,7 @@ class Truck(
         default_factory = (
             lambda: lambda mname, flavor: _icecream.DEFAULT_OUTPUT_FUNCTION ) )
     trace_levels: __.typx.Annotated[
-        __.cabc.Mapping[ str | None, int ],
+        TraceLevelsRegistry,
         __.typx.Doc(
             ''' Mapping of module names to maximum trace depths.
 
@@ -124,6 +121,10 @@ class Truck(
         __.typx.Doc(
             ''' Cache of debugger instances by module and flavor. ''' ),
     ] = __.dcls.field( default_factory = __.AccretiveDictionary ) # pyright: ignore
+    _debuggers_lock: __.typx.Annotated[
+        __.threads.Lock,
+        __.typx.Doc( ''' Access lock for cache of debugger instances. ''' ),
+    ] = __.dcls.field( default_factory = __.threads.Lock )
     # pylint: enable=invalid-field-call
 
     @_validate_arguments
@@ -132,7 +133,8 @@ class Truck(
         mname = _discover_invoker_module_name( )
         cache_index = ( mname, flavor )
         if cache_index in self._debuggers: # pylint: disable=unsupported-membership-test
-            return self._debuggers[ cache_index ] # pylint: disable=unsubscriptable-object
+            with self._debuggers_lock: # pylint: disable=not-context-manager
+                return self._debuggers[ cache_index ] # pylint: disable=unsubscriptable-object
         configuration = _produce_ic_configuration( self, mname, flavor )
         if isinstance( self.printer_factory, __.io.TextIOBase ):
             printer = __.funct.partial( print, file = self.printer_factory )
@@ -150,7 +152,8 @@ class Truck(
             active_flavors = (
                 _calculate_effective_flavors( self.active_flavors, mname ) )
             debugger.enabled = flavor in active_flavors
-        self._debuggers[ cache_index ] = debugger # pylint: disable=unsupported-assignment-operation
+        with self._debuggers_lock: # pylint: disable=not-context-manager
+            self._debuggers[ cache_index ] = debugger # pylint: disable=unsupported-assignment-operation
         return debugger
 
     @_validate_arguments
@@ -173,23 +176,23 @@ class Truck(
         self.modulecfgs[ name ] = configuration # pylint: disable=unsupported-assignment-operation
 
 
+ActiveFlavorsRegistry: __.typx.TypeAlias = (
+    __.cabc.Mapping[ str | None, __.cabc.Set[ int | str ] ] )
+PrinterFactoryUnion: __.typx.TypeAlias = __.typx.Union[
+    __.io.TextIOBase,
+    __.cabc.Callable[ [ str, int | str ], __.cabc.Callable[ [ str ], None ] ],
+]
+TraceLevelsRegistry: __.typx.TypeAlias = __.cabc.Mapping[ str | None, int ]
+
+
 @_validate_arguments
 def install(
     alias: str = _builtins_alias_default,
     active_flavors: __.Absential[
-        __.typx.Union[
-            __.cabc.Set[ int | str ],
-            __.cabc.Mapping[ str | None, __.cabc.Set[ int | str ] ] ]
-    ] = __.absent,
+        __.cabc.Set[ int | str ] | ActiveFlavorsRegistry ] = __.absent,
     generalcfg: __.Absential[ _configuration.Vehicle ] = __.absent,
-    printer_factory: __.Absential[ __.typx.Union[
-            __.io.TextIOBase,
-            __.typx.Callable[
-                [ str, int | str ], __.typx.Callable[ [ str ], None ] ],
-    ] ] = __.absent,
-    trace_levels: __.Absential[
-        int | __.cabc.Mapping[ str | None, int ]
-    ] = __.absent,
+    printer_factory: __.Absential[ PrinterFactoryUnion ] = __.absent,
+    trace_levels: __.Absential[ int | TraceLevelsRegistry ] = __.absent,
 ) -> Truck:
     ''' Installs configured truck into builtins.
 

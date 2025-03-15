@@ -38,7 +38,7 @@ class Flavor(
 ):
     ''' Per-flavor configuration. '''
     formatter: __.typx.Annotated[
-        __.typx.Optional[ __.typx.Callable[ [ __.typx.Any ], str ] ],
+        __.typx.Optional[ Formatter ],
         __.typx.Doc(
             ''' Callable to convert an argument to a string.
 
@@ -69,10 +69,10 @@ class Module(
     ''' Per-module or per-package configuration. '''
 
     # pylint: disable=invalid-field-call
-    flavors: __.AccretiveDictionary[ int | str, Flavor ] = ( # pyright: ignore
+    flavors: FlavorsRegistry = ( # pyright: ignore
         __.dcls.field( default_factory = __.AccretiveDictionary ) )
     formatter: __.typx.Annotated[
-        __.typx.Optional[ __.typx.Callable[ [ __.typx.Any ], str ] ],
+        __.typx.Optional[ Formatter ],
         __.typx.Doc(
             ''' Callable to convert an argument to a string.
 
@@ -104,11 +104,10 @@ class Vehicle(
     ''' Per-vehicle configuration. '''
 
     # pylint: disable=invalid-field-call
-    flavors: __.AccretiveDictionary[ int | str, Flavor ] = ( # pyright: ignore
+    flavors: FlavorsRegistry = (
         __.dcls.field( default_factory = _produce_default_flavors ) )
     formatter: __.typx.Annotated[
-        # TODO? Union with enum for Null, Pretty, Rich.
-        __.typx.Callable[ [ __.typx.Any ], str ],
+        Formatter,
         __.typx.Doc( ''' Callable to convert an argument to a string. ''' ),
     ] = _icecream.DEFAULT_ARG_TO_STRING_FUNCTION
     include_context: __.typx.Annotated[
@@ -118,3 +117,9 @@ class Vehicle(
         str, __.typx.Doc( ''' Prefix for output. ''' )
     ] = _icecream.DEFAULT_PREFIX
     # pylint: enable=invalid-field-call
+
+
+FlavorsRegistry: __.typx.TypeAlias = (
+    __.AccretiveDictionary[ int | str, Flavor ] )
+# TODO? Formatter: Union with enum for Null, Pretty, Rich.
+Formatter: __.typx.TypeAlias = __.typx.Callable[ [ __.typx.Any ], str ]
