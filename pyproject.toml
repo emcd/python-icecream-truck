@@ -100,6 +100,7 @@ dependencies = [
   'isort',
   'packaging',
   'pre-commit',
+  'pyfakefs',
   'pylint',
   'pylint-per-file-ignores',
   'pyright',
