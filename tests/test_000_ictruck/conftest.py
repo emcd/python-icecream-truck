@@ -21,8 +21,10 @@
 ''' Configuration and fixtures for package tests. '''
 
 
+import builtins
 import io
 import logging
+
 import pytest
 from hypothesis import settings, HealthCheck
 
@@ -118,11 +120,9 @@ def log_capture( ):
 
 @pytest.fixture
 def clean_builtins( ):
-    ''' Preserves and restores the original __builtins__ state. '''
-    original = dict( __builtins__.__dict__ )
+    ''' Preserves and restores the original builtins state. '''
+    original = dict( builtins.__dict__ )
     yield
-    for key in list( __builtins__.__dict__.keys( ) ):
-        if key not in original:
-            delattr( __builtins__, key )
-        else:
-            __builtins__.__dict__[ key ] = original[ key ]
+    for key in list( builtins.__dict__.keys( ) ):
+        if key not in original: delattr( builtins, key )
+        else: builtins.__dict__[ key ] = original[ key ]

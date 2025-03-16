@@ -30,8 +30,10 @@ from . import configuration as _configuration
 from . import exceptions as _exceptions
 
 
-if __.typx.TYPE_CHECKING:
-    import _typeshed # pylint: disable=import-error,import-private-name
+# pylint: disable=import-error,import-private-name
+if __.typx.TYPE_CHECKING: # pragma: no cover
+    import _typeshed
+# pylint: enable=import-error,import-private-name
 
 
 _builtins_alias_default = 'ictr'
@@ -148,7 +150,7 @@ class Truck(
             trace_level = (
                 _calculate_effective_trace_level( self.trace_levels, mname) )
             debugger.enabled = flavor <= trace_level
-        elif isinstance( flavor, str ):
+        elif isinstance( flavor, str ): # pragma: no branch
             active_flavors = (
                 _calculate_effective_flavors( self.active_flavors, mname ) )
             debugger.enabled = flavor in active_flavors
@@ -187,12 +189,58 @@ TraceLevelsRegistry: __.typx.TypeAlias = __.cabc.Mapping[ str | None, int ]
 
 @_validate_arguments
 def install(
-    alias: str = _builtins_alias_default,
-    active_flavors: __.Absential[
-        __.cabc.Set[ int | str ] | ActiveFlavorsRegistry ] = __.absent,
-    generalcfg: __.Absential[ _configuration.Vehicle ] = __.absent,
-    printer_factory: __.Absential[ PrinterFactoryUnion ] = __.absent,
-    trace_levels: __.Absential[ int | TraceLevelsRegistry ] = __.absent,
+    alias: __.typx.Annotated[
+        str,
+        __.typx.Doc(
+            ''' Alias under which the truck is installed in builtins.
+
+                Defaults to "ictr" if not specified.
+            ''' ),
+    ] = _builtins_alias_default,
+    active_flavors: __.typx.Annotated[
+        __.Absential[ __.cabc.Set[ int | str ] | ActiveFlavorsRegistry ],
+        __.typx.Doc(
+            ''' Flavors to activate.
+
+                Can be a set, which applies globally across all registered
+                modules. Or, can be a mapping of module names to sets.
+
+                Module-specific entries merge with global entries.
+            ''' ),
+    ] = __.absent,
+    generalcfg: __.typx.Annotated[
+        __.Absential[ _configuration.Vehicle ],
+        __.typx.Doc(
+            ''' General configuration for the truck.
+
+                Top of configuration inheritance hierarchy. If absent,
+                defaults to a suitable configuration for application use.
+            ''' ),
+    ] = __.absent,
+    printer_factory: __.typx.Annotated[
+        __.Absential[ PrinterFactoryUnion ],
+        __.typx.Doc(
+            ''' Factory which produces callables to output text somewhere.
+
+                May also be writable text stream.
+                Factories take two arguments, module name and flavor, and
+                return a callable which takes one argument, the string
+                produced by a formatter.
+
+                If absent, uses a default.
+            ''' ),
+    ] = __.absent,
+    trace_levels: __.typx.Annotated[
+        __.Absential[ int | TraceLevelsRegistry ],
+        __.typx.Doc(
+            ''' Maximum trace depths.
+
+                Can be an integer, which applies globally across all registered
+                modules. Or, can be a mapping of module names to integers.
+
+                Module-specific entries override global entries.
+            ''' ),
+    ] = __.absent,
 ) -> Truck:
     ''' Installs configured truck into builtins.
 
@@ -229,8 +277,22 @@ def install(
 
 @_validate_arguments
 def register_module(
-    name: __.Absential[ str ] = __.absent,
-    configuration: __.Absential[ _configuration.Module ] = __.absent,
+    name: __.typx.Annotated[
+        __.Absential[ str ],
+        __.typx.Doc(
+            ''' Name of the module to register.
+
+                If absent, infers the current module name.
+            ''' ),
+    ] = __.absent,
+    configuration: __.typx.Annotated[
+        __.Absential[ _configuration.Module ],
+        __.typx.Doc(
+            ''' Configuration for the module.
+
+                If absent, uses a default configuration.
+            ''' ),
+    ] = __.absent,
 ) -> None:
     ''' Registers module configuration on the builtin truck.
 
@@ -255,7 +317,7 @@ def _calculate_effective_flavors(
     result = set( flavors.get( None, set( ) ) )
     for mname_ in _iterate_module_name_ancestry( mname ):
         if mname_ in flavors:
-            result |= flavors[ mname_ ]
+            result |= set( flavors[ mname_ ] )
     return result
 
 
@@ -280,12 +342,14 @@ def _dict_from_dataclass(
 
 def _discover_invoker_module_name( ) -> str:
     frame = __.inspect.currentframe( )
-    while frame:
+    while frame: # pragma: no branch
         module = __.inspect.getmodule( frame )
         if module is None:
-            if '<stdin>' == frame.f_code.co_filename: # pylint: disable=magic-value-comparison
+            # pylint: disable=magic-value-comparison
+            if '<stdin>' == frame.f_code.co_filename: # pragma: no cover
                 name = '__main__'
                 break
+            # pylint: enable=magic-value-comparison
             raise _exceptions.ModuleInferenceFailure
         name = module.__name__
         if not name.startswith( f"{__package__}." ): break
@@ -328,31 +392,27 @@ def _produce_ic_configuration(
     for mname_ in _iterate_module_name_ancestry( mname ):
         if mname_ not in vehicle.modulecfgs: continue
         mconfig = vehicle.modulecfgs[ mname_ ]
-        configd = _merge_ic_configuration( configd, mconfig )
-        if flavor not in mconfig.flavors: continue
-        has_flavor = True
-        fconfig = mconfig.flavors[ flavor ]
-        configd = _merge_ic_configuration( configd, fconfig )
+        if flavor in mconfig.flavors:
+            fconfig = mconfig.flavors[ flavor ]
+            configd = _merge_ic_configuration( configd, fconfig )
+            has_flavor = True
+        elif not has_flavor: # Only merge module config if no flavor match.
+            configd = _merge_ic_configuration( configd, mconfig )
     if not has_flavor: raise _exceptions.FlavorInavailability( flavor )
     return __.ImmutableDictionary( configd )
 
 
 # pylint: disable=eval-used
 def _reduce_annotation( annotation: __.typx.Any ) -> tuple[ type, ... ]:
+    if isinstance( annotation, str ):
+        return _reduce_annotation( eval( annotation ) ) # nosec: B307
     origin = __.typx.get_origin( annotation )
-    if origin is None:
-        obj = (
-            eval( annotation ) if isinstance( annotation, str ) # nosec: B307
-            else annotation )
-        if isinstance( obj, __.types.UnionType ):
-            return tuple( __.itert.chain.from_iterable(
-                map( _reduce_annotation, __.typx.get_args( obj ) ) ) )
-        return ( obj, )
+    if isinstance( annotation, __.types.UnionType ) or origin is __.typx.Union:
+        return tuple( __.itert.chain.from_iterable(
+            map( _reduce_annotation, __.typx.get_args( annotation ) ) ) )
+    if origin is None: return ( annotation, )
     if origin is __.typx.Annotated:
         return _reduce_annotation( annotation.__origin__ )
-    if origin is __.typx.Union:
-        return tuple( __.itert.chain.from_iterable(
-            map( _reduce_annotation, __.typx.get_args( origin ) ) ) )
     # TODO? Other special forms.
     return ( origin, )
 # pylint: enable=eval-used

@@ -105,6 +105,7 @@ dependencies = [
   'pylint-per-file-ignores',
   'pyright',
   'pytest',
+  'pytest-mock',
   'ruff',
   'semgrep;platform_system!="Windows"', # https://github.com/returntocorp/semgrep/issues/1330
   'sphinx',
