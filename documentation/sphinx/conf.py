@@ -79,6 +79,11 @@ nitpick_ignore = [
       "v, remove specified key and return the corresponding value." ),
     # Type annotation weirdnesses.
     ( 'py:class', "Doc" ),
+    ( 'py:class', "absence.objects.AbsentSingleton" ),
+    ( 'py:class', "accretive.dictionaries.Annotated" ),
+    ( 'py:class', "accretive.dictionaries.Dictionary" ),
+    ( 'py:class', "collections.abc.Annotated" ),
+    ( 'py:class', "ictruck.configuration.Annotated" ),
     ( 'py:class', "types.Annotated" ),
     ( 'py:class', "typing_extensions.Any" ),
 ]
