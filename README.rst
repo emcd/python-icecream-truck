@@ -44,8 +44,14 @@
    :alt: Python Versions
    :target: https://pypi.org/project/icecream-truck/
 
-🍦 **Flavorful Debugging** - A Python library which supercharges the powerful
-and well-known `icecream <https://github.com/gruns/icecream>`_ package with
+.. image:: https://raw.githubusercontent.com/emcd/python-icecream-truck/master/data/pictures/logo.svg
+   :alt: Icecream Truck Logo
+   :width: 800
+   :align: center
+
+
+🍦 **Flavorful Debugging** - A Python library which enhances the powerful and
+well-known `icecream <https://github.com/gruns/icecream>`_ package with
 flavored traces, module hierarchies, and custom outputs. Load up the truck and
 roll out delicious debug prints for applications and libraries alike!
 
