@@ -76,9 +76,12 @@ jobs:
         id: matrix-exclusions
         run: |
           set -eu
+          # TEMP: Disable PyPy on Linux and macOS until QA issue resolved.
           # PyPy has slow I/O, even slower on Windows.
           items="$(jq --compact-output <<EOF
           [
+            {"platform": "ubuntu-latest", "python-version": "pypy3.10"}
+            {"platform": "macos-latest", "python-version": "pypy3.10"}
             {"platform": "windows-latest", "python-version": "pypy3.10"}
           ]
           EOF
