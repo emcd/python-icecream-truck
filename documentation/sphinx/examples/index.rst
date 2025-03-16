@@ -24,5 +24,5 @@ Examples
 .. toctree::
    :maxdepth: 2
 
-
-.. todo:: Add examples to toctree.
+   vehicles
+   recipes
