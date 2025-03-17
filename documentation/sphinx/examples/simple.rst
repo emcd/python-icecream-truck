@@ -17,13 +17,33 @@
    +--------------------------------------------------------------------------+
 
 
-*******************************************************************************
-Examples
-*******************************************************************************
+Simple Cases
+===============================================================================
 
-.. toctree::
-   :maxdepth: 2
+Adjustable Trace Level via Environment Variable
+-------------------------------------------------------------------------------
 
-   simple
-   vehicles
-   recipes
+By default, ``icecream-truck`` does not produce any output. You, as an
+application developer, will need to determine how much output you want from it
+and whether you will let your users adjust that knob. Having a default trace
+depth, which can be overridden by environment variable is one simple way to
+achieve this.
+
+.. literalinclude:: ../../../examples/simple/trucker.py
+   :language: python
+
+Running this will result in::
+
+    TRACE0| 'Icecream tracing active.'
+    TRACE2| operator: <built-in function mul>
+    TRACE1| answer: 42
+
+Running this with ``ICTRUCK_TRACE_LEVELS=3`` in the environment will result
+in::
+
+    TRACE0| 'Icecream tracing active.'
+    TRACE2| operator: <built-in function mul>
+    TRACE3| datum: 2
+    TRACE3| datum: 3
+    TRACE3| datum: 7
+    TRACE1| answer: 42

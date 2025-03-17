@@ -26,14 +26,5 @@
 - Formatter Enum: Enum for `Null`, `Pretty`, `Rich` with terminal detection.
 
 ## Notes for Future Conversations
-- **Testing**: Write `pytest` suite—cover `install`, `register_module`,
-  `produce_logging_truck`, and flavor handling. Test edge cases like missing
-  modules or invalid flavors.
-- **Docs**: Expand with a full user guide (e.g., `docs/sphinx/`). Include
-  advanced recipes (e.g., `rich` integration) and CLI examples.
 - **Performance**: Profile `printer_factory` and `_debuggers` caching—ensure no
   bottlenecks in production use.
-- **Logo**: Consider a fun ice cream truck logo for the README (SVG or
-  emoji-based?).
-- **Release**: Prep for PyPI—double-check `pyproject.toml`, versioning, and
-  dependencies.
