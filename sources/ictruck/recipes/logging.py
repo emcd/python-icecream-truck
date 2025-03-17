@@ -18,31 +18,29 @@
 #============================================================================#
 
 
-''' Factories which produce Icecream debugger output functions. '''
+''' Recipes for logging printers. '''
 
 
 from __future__ import annotations
 
 from . import __
-from . import configuration as _configuration
-from . import vehicles as _vehicles
 
 
-def produce_logging_truck( install = True ) -> _vehicles.Truck:
+def produce_logging_truck( install: bool = True ) -> __.vehicles.Truck:
     ''' Produces icecream truck that is integrated with 'logging' module. '''
     active_flavors = { None: frozenset( {
         'debug', 'info', 'warning', 'error', 'critical' } ) }
-    flavors: __.AccretiveDictionary[ int | str, _configuration.Flavor ] = (
+    flavors: __.AccretiveDictionary[ int | str, __.configuration.Flavor ] = (
         __.AccretiveDictionary(
-            {   name: _configuration.Flavor( )
+            {   name: __.configuration.Flavor( )
                 for name in active_flavors[ None ] } ) )
-    generalcfg = _configuration.Vehicle( flavors = flavors )
+    generalcfg = __.configuration.Vehicle( flavors = flavors )
     nomargs = dict(
         active_flavors = active_flavors,
         generalcfg = generalcfg,
         printer_factory = _logger_factory )
-    if install: return _vehicles.install( **nomargs )
-    return _vehicles.Truck( **nomargs ) # pyright: ignore
+    if install: return __.vehicles.install( **nomargs )
+    return __.vehicles.Truck( **nomargs ) # pyright: ignore
 
 
 def _logger_factory(

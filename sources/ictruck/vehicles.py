@@ -180,10 +180,11 @@ class Truck(
 
 ActiveFlavorsRegistry: __.typx.TypeAlias = (
     __.cabc.Mapping[ str | None, __.cabc.Set[ int | str ] ] )
+Printer: __.typx.TypeAlias = __.cabc.Callable[ [ str ], None ]
+PrinterFactory: __.typx.TypeAlias = __.cabc.Callable[
+    [ str, int | str ], Printer ]
 PrinterFactoryUnion: __.typx.TypeAlias = __.typx.Union[
-    __.io.TextIOBase,
-    __.cabc.Callable[ [ str, int | str ], __.cabc.Callable[ [ str ], None ] ],
-]
+    __.io.TextIOBase, PrinterFactory ]
 TraceLevelsRegistry: __.typx.TypeAlias = __.cabc.Mapping[ str | None, int ]
 
 

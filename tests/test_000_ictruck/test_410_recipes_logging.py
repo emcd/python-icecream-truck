@@ -31,9 +31,15 @@ from . import PACKAGE_NAME, cache_import_module
 
 
 @pytest.fixture( scope = 'session' )
+def configuration( ):
+    ''' Provides configuration module. '''
+    return cache_import_module( f"{PACKAGE_NAME}.configuration" )
+
+
+@pytest.fixture( scope = 'session' )
 def recipes( ):
     ''' Provides recipes module. '''
-    return cache_import_module( f"{PACKAGE_NAME}.recipes" )
+    return cache_import_module( f"{PACKAGE_NAME}.recipes.logging" )
 
 
 @pytest.fixture( scope = 'session' )
@@ -43,13 +49,13 @@ def vehicles( ):
 
 
 def test_000_produce_logging_truck_default(
-    recipes, log_capture, clean_builtins
+    recipes, vehicles, log_capture, clean_builtins
 ):
     ''' Default produce_logging_truck installs truck in builtins. '''
     truck = recipes.produce_logging_truck( )
     import builtins
     assert 'ictr' in builtins.__dict__, "Truck not installed in builtins"
-    assert isinstance( truck, recipes._vehicles.Truck ), "Not a Truck instance"
+    assert isinstance( truck, vehicles.Truck ), "Not a Truck instance"
     debugger = truck( 'info' )
     debugger( 'test message' )
     assert any(
@@ -57,13 +63,15 @@ def test_000_produce_logging_truck_default(
         for r in log_capture.records ), "Logging not captured"
 
 
-def test_010_produce_logging_truck_no_install( recipes, log_capture ):
+def test_010_produce_logging_truck_no_install(
+    recipes, vehicles, log_capture
+):
     ''' produce_logging_truck with install=False does not affect builtins. '''
     import builtins
     original = dict( builtins.__dict__ )
     truck = recipes.produce_logging_truck( install = False )
     assert builtins.__dict__ == original, "Builtins modified unexpectedly"
-    assert isinstance( truck, recipes._vehicles.Truck ), "Not a Truck instance"
+    assert isinstance( truck, vehicles.Truck ), "Not a Truck instance"
     debugger = truck( 'debug' )
     debugger( 'debug test' )
     assert any(
@@ -83,18 +91,19 @@ def test_020_produce_logging_truck_flavors( recipes, clean_builtins ):
         assert debugger.enabled, f"Flavor '{flavor}' should be enabled"
 
 
-def test_030_produce_logging_truck_generalcfg( recipes, clean_builtins ):
+def test_030_produce_logging_truck_generalcfg(
+    recipes, configuration, clean_builtins
+):
     ''' produce_logging_truck configures generalcfg with flavors. '''
     truck = recipes.produce_logging_truck( install = False )
-    assert isinstance( truck.generalcfg, recipes._configuration.Vehicle ), (
+    assert isinstance( truck.generalcfg, configuration.Vehicle ), (
         "generalcfg not a Vehicle instance" )
     assert set( truck.generalcfg.flavors.keys( ) ) == (
         { 'debug', 'info', 'warning', 'error', 'critical' } ), (
         "Unexpected flavors in generalcfg" )
     for flavor in truck.generalcfg.flavors:
         assert isinstance(
-            truck.generalcfg.flavors[ flavor ],
-            recipes._configuration.Flavor ), (
+            truck.generalcfg.flavors[ flavor ], configuration.Flavor ), (
                 f"Flavor '{flavor}' not a Flavor instance" )
 
 

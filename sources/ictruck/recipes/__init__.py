@@ -18,8 +18,12 @@
 #============================================================================#
 
 
-''' Common constants, imports, and utilities. '''
+''' Useful icecream recipes which our trucks can vend. '''
 
 
-# Expose everything from internal modules.
-from .imports import *
+from __future__ import annotations
+
+
+# NOTE: We do not important recipe modules here, because some have optional
+#       dependencies. Could use fallbacks if we standardize module interfaces
+#       so that imports can be substituted.
