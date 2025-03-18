@@ -36,28 +36,16 @@ if __.typx.TYPE_CHECKING: # pragma: no cover
 # pylint: enable=import-error,import-private-name
 
 
-_builtins_alias_default = 'ictr'
+_validate_arguments = (
+    __.validate_arguments(
+        globalvars = globals( ),
+        errorclass = _exceptions.ArgumentClassInvalidity ) )
 
 
-def _validate_arguments( function: __.cabc.Callable[ ..., __.typx.Any ] ):
-
-    @__.funct.wraps( function )
-    def validate( *posargs: __.typx.Any, **nomargs: __.typx.Any ):
-        ''' Validates arguments before invocation. '''
-        signature = __.inspect.signature( function )
-        inspectee = signature.bind( *posargs, **nomargs )
-        inspectee.apply_defaults( )
-        for name, value in inspectee.arguments.items( ):
-            param = signature.parameters[ name ]
-            annotation = param.annotation
-            if __.is_absent( value ): continue
-            if annotation is param.empty: continue
-            classes = _reduce_annotation( annotation )
-            if not isinstance( value, classes ):
-                raise _exceptions.ArgumentClassInvalidity( name, classes )
-        return function( *posargs, **nomargs )
-
-    return validate
+builtins_alias_default: __.typx.Annotated[
+    str,
+    __.typx.Doc( ''' Default alias for global truck in builtins module. ''' ),
+] = 'ictr'
 
 
 class Truck(
@@ -197,7 +185,7 @@ def install(
 
                 Defaults to "ictr" if not specified.
             ''' ),
-    ] = _builtins_alias_default,
+    ] = builtins_alias_default,
     active_flavors: __.typx.Annotated[
         __.Absential[ __.cabc.Set[ int | str ] | ActiveFlavorsRegistry ],
         __.typx.Doc(
@@ -304,10 +292,10 @@ def register_module(
         without overriding anything set by the application or other libraries.
         Application developers should call :py:func:`install` instead.
     '''
-    if _builtins_alias_default not in __builtins__:
+    if builtins_alias_default not in __builtins__:
         truck = Truck( printer_factory = lambda mname, flavor: lambda x: None )
-        __builtins__[ _builtins_alias_default ] = truck
-    else: truck = __builtins__[ _builtins_alias_default ]
+        __builtins__[ builtins_alias_default ] = truck
+    else: truck = __builtins__[ builtins_alias_default ]
     truck.register_module( name = name, configuration = configuration )
 
 
@@ -401,19 +389,3 @@ def _produce_ic_configuration(
             configd = _merge_ic_configuration( configd, mconfig )
     if not has_flavor: raise _exceptions.FlavorInavailability( flavor )
     return __.ImmutableDictionary( configd )
-
-
-# pylint: disable=eval-used
-def _reduce_annotation( annotation: __.typx.Any ) -> tuple[ type, ... ]:
-    if isinstance( annotation, str ):
-        return _reduce_annotation( eval( annotation ) ) # nosec: B307
-    origin = __.typx.get_origin( annotation )
-    if isinstance( annotation, __.types.UnionType ) or origin is __.typx.Union:
-        return tuple( __.itert.chain.from_iterable(
-            map( _reduce_annotation, __.typx.get_args( annotation ) ) ) )
-    if origin is None: return ( annotation, )
-    if origin is __.typx.Annotated:
-        return _reduce_annotation( annotation.__origin__ )
-    # TODO? Other special forms.
-    return ( origin, )
-# pylint: enable=eval-used

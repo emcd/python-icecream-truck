@@ -42,7 +42,7 @@ keywords = [ 'icecream', 'debug', 'introspect' ]
 name = 'Eric McDonald'
 email = 'emcd@users.noreply.github.com'
 [project.optional-dependencies]
-rich = [ 'rich' ]
+rich = [ 'colorama', 'rich' ]
 [project.urls]
 'Homepage' = 'https://github.com/emcd/python-icecream-truck'
 'Documentation' = 'https://emcd.github.io/python-icecream-truck'

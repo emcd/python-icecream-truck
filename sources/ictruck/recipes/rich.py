@@ -23,9 +23,14 @@
 
 from __future__ import annotations
 
+import colorama as _colorama
+
 from rich.console import Console as _Console
 
 from . import __
+
+
+# def install( ):
 
 
 def produce_truck(
@@ -58,4 +63,20 @@ def _console_format( console: _Console, value: __.typx.Any ) -> str:
 def _produce_simple_printer(
     target: __.io.TextIOBase, mname: str, flavor: str # pylint: disable=unused-argument
 ) -> __.vehicles.Printer:
-    return __.funct.partial( print, file = target )
+    return __.funct.partial( _simple_print, target = target )
+
+
+def _simple_print( text: str, target: __.io.TextIOBase ) -> None:
+    with _windows_replace_ansi_sgr( ):
+        print( text, file = target )
+
+
+@__.ctxl.contextmanager
+def _windows_replace_ansi_sgr( ) -> __.typx.Generator[ None, None, None ]:
+    # Note: Copied from the 'icecream' sources.
+    #       Converts ANSI SGR sequences to Windows API calls on older
+    #       command terminals which do not have proper ANSI SGR support.
+    #       Otherwise, rendering on terminal occurs normally.
+    _colorama.init( )
+    yield
+    _colorama.deinit( )
