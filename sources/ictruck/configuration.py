@@ -28,19 +28,42 @@ import icecream as _icecream
 from . import __
 
 
-def _produce_default_flavors( ) -> __.AccretiveDictionary[ int | str, Flavor ]:
+def _produce_default_flavors( ) -> __.AccretiveDictionary[
+    Flavor, FlavorConfiguration
+]:
     return __.AccretiveDictionary( {
-        i: Flavor( prefix = f"TRACE{i}| " ) for i in range( 10 ) } )
+        i: FlavorConfiguration(
+            prefix_emitter = f"TRACE{i}| " ) for i in range( 10 ) } )
 
 
-class Flavor(
+class FormatterControl(
+    metaclass = __.ImmutableDataclass, # decorators = ( __.immutable, )
+):
+    ''' Contextual data for formatter and prefix factories. '''
+
+    columns_count_effective: __.typx.Annotated[
+        __.typx.Optional[ int ],
+        __.typx.Doc(
+            ''' Available line length after accounting for embellishments.
+
+                May be ``None`` if not determinable.
+            '''
+        ),
+    ] = None
+
+
+class FlavorConfiguration(
     metaclass = __.ImmutableDataclass, # decorators = ( __.immutable, )
 ):
     ''' Per-flavor configuration. '''
-    formatter: __.typx.Annotated[
-        __.typx.Optional[ Formatter ],
+
+    formatter_factory: __.typx.Annotated[
+        __.typx.Optional[ FormatterFactory ],
         __.typx.Doc(
-            ''' Callable to convert an argument to a string.
+            ''' Factory which produces formatter callable.
+
+                Takes formatter control, module name, and flavor as arguments.
+                Returns formatter to convert an argument to a string.
 
                 Default ``None`` inherits from module configuration.
             ''' ),
@@ -53,17 +76,20 @@ class Flavor(
                 Default ``None`` inherits from module configuration.
             ''' ),
     ] = None
-    prefix: __.typx.Annotated[
-        __.typx.Optional[ str ],
+    prefix_emitter: __.typx.Annotated[
+        __.typx.Optional[ PrefixEmitterUnion ],
         __.typx.Doc(
-            ''' Prefix for output.
+            ''' String or factory which produces output prefix string.
+
+                Factory takes formatter control, module name, and flavor as
+                arguments. Returns prefix string.
 
                 Default ``None`` inherits from module configuration.
             ''' ),
     ] = None
 
 
-class Module(
+class ModuleConfiguration(
     metaclass = __.ImmutableDataclass, # decorators = ( __.immutable, )
 ):
     ''' Per-module or per-package configuration. '''
@@ -71,12 +97,15 @@ class Module(
     # pylint: disable=invalid-field-call
     flavors: FlavorsRegistry = ( # pyright: ignore
         __.dcls.field( default_factory = __.AccretiveDictionary ) )
-    formatter: __.typx.Annotated[
-        __.typx.Optional[ Formatter ],
+    formatter_factory: __.typx.Annotated[
+        __.typx.Optional[ FormatterFactory ],
         __.typx.Doc(
-            ''' Callable to convert an argument to a string.
+            ''' Factory which produces formatter callable.
 
-                Default ``None`` inherits from instance configuration.
+                Takes formatter control, module name, and flavor as arguments.
+                Returns formatter to convert an argument to a string.
+
+                Default ``None`` inherits from vehicle configuration.
             ''' ),
     ] = None
     include_context: __.typx.Annotated[
@@ -84,13 +113,16 @@ class Module(
         __.typx.Doc(
             ''' Include stack frame with output?
 
-                Default ``None`` inherits from instance configuration.
+                Default ``None`` inherits from vehicle configuration.
             ''' ),
     ] = None
-    prefix: __.typx.Annotated[
-        __.typx.Optional[ str ],
+    prefix_emitter: __.typx.Annotated[
+        __.typx.Optional[ PrefixEmitterUnion ],
         __.typx.Doc(
-            ''' Prefix for output.
+            ''' String or factory which produces output prefix string.
+
+                Factory takes formatter control, module name, and flavor as
+                arguments. Returns prefix string.
 
                 Default ``None`` inherits from instance configuration.
             ''' ),
@@ -98,7 +130,7 @@ class Module(
     # pylint: enable=invalid-field-call
 
 
-class Vehicle(
+class VehicleConfiguration(
     metaclass = __.ImmutableDataclass, # decorators = ( __.immutable, )
 ):
     ''' Per-vehicle configuration. '''
@@ -106,20 +138,35 @@ class Vehicle(
     # pylint: disable=invalid-field-call
     flavors: FlavorsRegistry = (
         __.dcls.field( default_factory = _produce_default_flavors ) )
-    formatter: __.typx.Annotated[
-        Formatter,
-        __.typx.Doc( ''' Callable to convert an argument to a string. ''' ),
-    ] = _icecream.DEFAULT_ARG_TO_STRING_FUNCTION
+    formatter_factory: __.typx.Annotated[
+        FormatterFactory,
+        __.typx.Doc(
+            ''' Factory which produces formatter callable.
+
+                Takes formatter control, module name, and flavor as arguments.
+                Returns formatter to convert an argument to a string.
+            ''' ),
+    ] = lambda ctrl, mname, flavor: _icecream.DEFAULT_ARG_TO_STRING_FUNCTION
     include_context: __.typx.Annotated[
         bool, __.typx.Doc( ''' Include stack frame with output? ''' )
     ] = False
-    prefix: __.typx.Annotated[
-        str, __.typx.Doc( ''' Prefix for output. ''' )
+    prefix_emitter: __.typx.Annotated[
+        PrefixEmitterUnion,
+        __.typx.Doc(
+            ''' String or factory which produces output prefix string.
+
+                Factory takes formatter control, module name, and flavor as
+                arguments. Returns prefix string.
+            ''' ),
     ] = _icecream.DEFAULT_PREFIX
     # pylint: enable=invalid-field-call
 
 
+Flavor: __.typx.TypeAlias = int | str
 FlavorsRegistry: __.typx.TypeAlias = (
-    __.AccretiveDictionary[ int | str, Flavor ] )
-# TODO? Formatter: Union with enum for Null, Pretty, Rich.
+    __.AccretiveDictionary[ Flavor, FlavorConfiguration ] )
 Formatter: __.typx.TypeAlias = __.typx.Callable[ [ __.typx.Any ], str ]
+FormatterFactory: __.typx.TypeAlias = (
+    __.typx.Callable[ [ FormatterControl, str, Flavor ], Formatter ] )
+PrefixEmitter: __.typx.TypeAlias = __.typx.Callable[ [ str, Flavor ], str ]
+PrefixEmitterUnion: __.typx.TypeAlias = str | PrefixEmitter

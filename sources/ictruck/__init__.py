@@ -27,13 +27,8 @@ from . import exceptions
 # --- END: Injected by Copier ---
 
 
-from .configuration import (
-    Flavor as FlavorConfiguration,
-    Module as ModuleConfiguration,
-    Vehicle as VehicleConfiguration,
-)
+from .configuration import *
 from .exceptions import *
-from .recipes import *
 from .vehicles import *
 
 

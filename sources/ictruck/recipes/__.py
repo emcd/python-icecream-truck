@@ -26,6 +26,4 @@
 
 from __future__ import annotations
 
-from .. import configuration
-from .. import vehicles
 from ..__ import *

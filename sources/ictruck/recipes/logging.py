@@ -23,29 +23,34 @@
 
 from __future__ import annotations
 
+from ..configuration import (
+    Flavor as _Flavor,
+    FlavorConfiguration as _FlavorConfiguration,
+    VehicleConfiguration as _VehicleConfiguration,
+)
+from ..vehicles import (
+    Printer as _Printer, Truck as _Truck, install as _install )
 from . import __
 
 
-def produce_logging_truck( install: bool = True ) -> __.vehicles.Truck:
+def produce_truck( install: bool = True ) -> _Truck:
     ''' Produces icecream truck that is integrated with 'logging' module. '''
     active_flavors = { None: frozenset( {
         'debug', 'info', 'warning', 'error', 'critical' } ) }
-    flavors: __.AccretiveDictionary[ int | str, __.configuration.Flavor ] = (
+    flavors: __.AccretiveDictionary[ _Flavor, _FlavorConfiguration ] = (
         __.AccretiveDictionary(
-            {   name: __.configuration.Flavor( )
+            {   name: _FlavorConfiguration( )
                 for name in active_flavors[ None ] } ) )
-    generalcfg = __.configuration.Vehicle( flavors = flavors )
+    generalcfg = _VehicleConfiguration( flavors = flavors )
     nomargs = dict(
         active_flavors = active_flavors,
         generalcfg = generalcfg,
         printer_factory = _logger_factory )
-    if install: return __.vehicles.install( **nomargs )
-    return __.vehicles.Truck( **nomargs ) # pyright: ignore
+    if install: return _install( **nomargs )
+    return _Truck( **nomargs ) # pyright: ignore
 
 
-def _logger_factory(
-    mname: str, flavor: int | str
-) -> __.cabc.Callable[ [ str ], None ]:
+def _logger_factory( mname: str, flavor: _Flavor ) -> _Printer:
     import logging
     logger = logging.getLogger( mname )
     level = (

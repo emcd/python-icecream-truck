@@ -26,8 +26,14 @@ from __future__ import annotations
 import icecream as _icecream
 
 from . import __
-from . import configuration as _configuration
 from . import exceptions as _exceptions
+from .configuration import (
+    Flavor as _Flavor,
+    FormatterControl as _FormatterControl,
+    FlavorConfiguration as _FlavorConfiguration,
+    ModuleConfiguration as _ModuleConfiguration,
+    VehicleConfiguration as _VehicleConfiguration,
+)
 
 
 # pylint: disable=import-error,import-private-name
@@ -64,16 +70,16 @@ class Truck(
             ''' ),
     ] = __.dcls.field( default_factory = __.ImmutableDictionary ) # pyright: ignore
     generalcfg: __.typx.Annotated[
-        _configuration.Vehicle,
+        _VehicleConfiguration,
         __.typx.Doc(
             ''' General configuration.
 
                 Top of configuration inheritance hierarchy.
                 Default is suitable for application use.
             ''' ),
-    ] = __.dcls.field( default_factory = _configuration.Vehicle )
+    ] = __.dcls.field( default_factory = _VehicleConfiguration )
     modulecfgs: __.typx.Annotated[
-        __.AccretiveDictionary[ str, _configuration.Module ],
+        __.AccretiveDictionary[ str, _ModuleConfiguration ],
         __.typx.Doc(
             ''' Registry of per-module configurations.
 
@@ -107,7 +113,7 @@ class Truck(
         default_factory = lambda: __.ImmutableDictionary( { None: -1 } ) )
     _debuggers: __.typx.Annotated[
         __.AccretiveDictionary[
-            tuple[ str, int | str ], _icecream.IceCreamDebugger ],
+            tuple[ str, _Flavor ], _icecream.IceCreamDebugger ],
         __.typx.Doc(
             ''' Cache of debugger instances by module and flavor. ''' ),
     ] = __.dcls.field( default_factory = __.AccretiveDictionary ) # pyright: ignore
@@ -118,7 +124,7 @@ class Truck(
     # pylint: enable=invalid-field-call
 
     @_validate_arguments
-    def __call__( self, flavor: int | str ) -> _icecream.IceCreamDebugger:
+    def __call__( self, flavor: _Flavor ) -> _icecream.IceCreamDebugger:
         ''' Vends flavor of Icecream debugger. '''
         mname = _discover_invoker_module_name( )
         cache_index = ( mname, flavor )
@@ -126,14 +132,10 @@ class Truck(
             with self._debuggers_lock: # pylint: disable=not-context-manager
                 return self._debuggers[ cache_index ] # pylint: disable=unsubscriptable-object
         configuration = _produce_ic_configuration( self, mname, flavor )
-        if isinstance( self.printer_factory, __.io.TextIOBase ):
-            printer = __.funct.partial( print, file = self.printer_factory )
-        else: printer = self.printer_factory( mname, flavor ) # pylint: disable=not-callable
-        debugger = _icecream.IceCreamDebugger(
-            argToStringFunction = configuration[ 'formatter' ],
-            includeContext = configuration[ 'include_context' ],
-            outputFunction = printer,
-            prefix = configuration[ 'prefix' ] )
+        control = _FormatterControl( )
+        initargs = _calculate_ic_initargs(
+            self, configuration, control, mname, flavor )
+        debugger = _icecream.IceCreamDebugger( **initargs )
         if isinstance( flavor, int ):
             trace_level = (
                 _calculate_effective_trace_level( self.trace_levels, mname) )
@@ -150,7 +152,7 @@ class Truck(
     def register_module(
         self,
         name: __.Absential[ str ] = __.absent,
-        configuration: __.Absential[ _configuration.Module ] = __.absent,
+        configuration: __.Absential[ _ModuleConfiguration ] = __.absent,
     ) -> None:
         ''' Registers configuration for module.
 
@@ -162,17 +164,17 @@ class Truck(
         if __.is_absent( name ):
             name = _discover_invoker_module_name( )
         if __.is_absent( configuration ):
-            configuration = _configuration.Module( )
+            configuration = _ModuleConfiguration( )
         self.modulecfgs[ name ] = configuration # pylint: disable=unsupported-assignment-operation
 
 
+ActiveFlavors: __.typx.TypeAlias = __.cabc.Set[ _Flavor ]
 ActiveFlavorsRegistry: __.typx.TypeAlias = (
-    __.cabc.Mapping[ str | None, __.cabc.Set[ int | str ] ] )
+    __.cabc.Mapping[ str | None, ActiveFlavors ] )
 Printer: __.typx.TypeAlias = __.cabc.Callable[ [ str ], None ]
-PrinterFactory: __.typx.TypeAlias = __.cabc.Callable[
-    [ str, int | str ], Printer ]
-PrinterFactoryUnion: __.typx.TypeAlias = __.typx.Union[
-    __.io.TextIOBase, PrinterFactory ]
+PrinterFactory: __.typx.TypeAlias = (
+    __.cabc.Callable[ [ str, _Flavor ], Printer ] )
+PrinterFactoryUnion: __.typx.TypeAlias = __.io.TextIOBase | PrinterFactory
 TraceLevelsRegistry: __.typx.TypeAlias = __.cabc.Mapping[ str | None, int ]
 
 
@@ -187,7 +189,7 @@ def install(
             ''' ),
     ] = builtins_alias_default,
     active_flavors: __.typx.Annotated[
-        __.Absential[ __.cabc.Set[ int | str ] | ActiveFlavorsRegistry ],
+        __.Absential[ ActiveFlavors | ActiveFlavorsRegistry ],
         __.typx.Doc(
             ''' Flavors to activate.
 
@@ -198,7 +200,7 @@ def install(
             ''' ),
     ] = __.absent,
     generalcfg: __.typx.Annotated[
-        __.Absential[ _configuration.Vehicle ],
+        __.Absential[ _VehicleConfiguration ],
         __.typx.Doc(
             ''' General configuration for the truck.
 
@@ -275,7 +277,7 @@ def register_module(
             ''' ),
     ] = __.absent,
     configuration: __.typx.Annotated[
-        __.Absential[ _configuration.Module ],
+        __.Absential[ _ModuleConfiguration ],
         __.typx.Doc(
             ''' Configuration for the module.
 
@@ -300,9 +302,8 @@ def register_module(
 
 
 def _calculate_effective_flavors(
-    flavors: __.cabc.Mapping[ str | None, __.cabc.Set[ int | str ] ],
-    mname: str,
-) -> __.cabc.Set[ int | str ]:
+    flavors: __.cabc.Mapping[ str | None, ActiveFlavors ], mname: str
+) -> ActiveFlavors:
     result = set( flavors.get( None, set( ) ) )
     for mname_ in _iterate_module_name_ancestry( mname ):
         if mname_ in flavors:
@@ -319,6 +320,28 @@ def _calculate_effective_trace_level(
         if mname_ in levels:
             result = levels[ mname_ ]
     return result
+
+
+def _calculate_ic_initargs(
+    truck: Truck,
+    configuration: __.ImmutableDictionary[ str, __.typx.Any ],
+    control: _FormatterControl,
+    mname: str,
+    flavor: _Flavor,
+) -> dict[ str, __.typx.Any ]:
+    nomargs: dict[ str, __.typx.Any ] = { }
+    nomargs[ 'argToStringFunction' ] = (
+        configuration[ 'formatter_factory' ]( control, mname, flavor ) )
+    nomargs[ 'includeContext' ] = configuration[ 'include_context' ]
+    if isinstance( truck.printer_factory, __.io.TextIOBase ):
+        printer = __.funct.partial( print, file = truck.printer_factory )
+    else: printer = truck.printer_factory( mname, flavor ) # pylint: disable=not-callable
+    nomargs[ 'outputFunction' ] = printer
+    prefix_emitter = configuration[ 'prefix_emitter' ]
+    nomargs[ 'prefix' ] = (
+        prefix_emitter if isinstance( prefix_emitter, str )
+        else prefix_emitter( mname, flavor ) )
+    return nomargs
 
 
 def _dict_from_dataclass(
@@ -360,7 +383,7 @@ def _merge_ic_configuration(
     result[ 'flavors' ] = (
             dict( base.get( 'flavors', dict( ) ) )
         |   dict( update.get( 'flavors', dict( ) ) ) )
-    for ename in ( 'formatter', 'include_context', 'prefix' ):
+    for ename in ( 'formatter_factory', 'include_context', 'prefix_emitter' ):
         uvalue = update.get( ename )
         if uvalue is not None: result[ ename ] = uvalue
         elif ename in base: result[ ename ] = base[ ename ]
@@ -368,24 +391,24 @@ def _merge_ic_configuration(
 
 
 def _produce_ic_configuration(
-    vehicle: Truck, mname: str, flavor: int | str
+    vehicle: Truck, mname: str, flavor: _Flavor
 ) -> __.ImmutableDictionary[ str, __.typx.Any ]:
+    fconfigs: list[ _FlavorConfiguration ] = [ ]
     vconfig = vehicle.generalcfg
     configd: dict[ str, __.typx.Any ] = {
         field.name: getattr( vconfig, field.name )
         for field in __.dcls.fields( vconfig ) }
-    has_flavor = flavor in vconfig.flavors
-    if has_flavor:
-        fconfig = vconfig.flavors[ flavor ]
-        configd = _merge_ic_configuration( configd, fconfig )
+    if flavor in vconfig.flavors:
+        fconfigs.append( vconfig.flavors[ flavor ] )
     for mname_ in _iterate_module_name_ancestry( mname ):
         if mname_ not in vehicle.modulecfgs: continue
         mconfig = vehicle.modulecfgs[ mname_ ]
+        configd = _merge_ic_configuration( configd, mconfig )
         if flavor in mconfig.flavors:
-            fconfig = mconfig.flavors[ flavor ]
-            configd = _merge_ic_configuration( configd, fconfig )
-            has_flavor = True
-        elif not has_flavor: # Only merge module config if no flavor match.
-            configd = _merge_ic_configuration( configd, mconfig )
-    if not has_flavor: raise _exceptions.FlavorInavailability( flavor )
+            fconfigs.append( mconfig.flavors[ flavor ] )
+    if not fconfigs: raise _exceptions.FlavorInavailability( flavor )
+    # Apply collected flavor configs after general and module configs.
+    # (Applied in top-down order for correct overrides.)
+    for fconfig in fconfigs:
+        configd = _merge_ic_configuration( configd, fconfig )
     return __.ImmutableDictionary( configd )

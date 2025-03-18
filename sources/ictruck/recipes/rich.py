@@ -24,22 +24,30 @@
 from __future__ import annotations
 
 import colorama as _colorama
+# import icecream as _icecream
 
 from rich.console import Console as _Console
 
+from ..configuration import (
+    Flavor as _Flavor,
+    Formatter as _Formatter,
+    FormatterControl as _FormatterControl,
+    VehicleConfiguration as _VehicleConfiguration,
+)
+from ..vehicles import (
+    Printer as _Printer, Truck as _Truck, install as _install )
 from . import __
 
 
 # def install( ):
 
 
-def produce_truck(
-    install: bool = True, stderr: bool = True
-) -> __.vehicles.Truck:
+def produce_truck( install: bool = True, stderr: bool = True ) -> _Truck:
     ''' Produces icecream truck which is integrated with 'rich' pacakge. '''
     console = _Console( stderr = stderr )
-    formatter = __.funct.partial( _console_format, console )
-    generalcfg = __.configuration.Vehicle( formatter = formatter )
+    generalcfg = _VehicleConfiguration(
+        formatter_factory = __.funct.partial(
+            _produce_console_formatter, console ) )
     target = __.sys.stderr if stderr else __.sys.stdout
     if not isinstance( target, __.io.TextIOBase ):
         # TODO: More appropriate error type.
@@ -47,8 +55,8 @@ def produce_truck(
     nomargs: dict[ str, __.typx.Any ] = dict(
         generalcfg = generalcfg,
         printer_factory = __.funct.partial( _produce_simple_printer, target ) )
-    if install: return __.vehicles.install( **nomargs )
-    return __.vehicles.Truck( **nomargs )
+    if install: return _install( **nomargs )
+    return _Truck( **nomargs )
 
 
 # TODO: 'register_module' which adds 'pretty_repr' as formatter.
@@ -60,9 +68,30 @@ def _console_format( console: _Console, value: __.typx.Any ) -> str:
     return capture.get( )
 
 
+def _produce_console_formatter(
+    console: _Console,
+    # pylint: disable=unused-argument
+    control: _FormatterControl,
+    mname: str,
+    flavor: int | str,
+    # pylint: enable=unused-argument
+) -> _Formatter:
+    return __.funct.partial( _console_format, console )
+
+
+# def _produce_prefix( console: _Console, mname: str, flavor: _Flavor ) -> str:
+#     # TODO: Detect if terminal supports 256 colors or true color.
+#     #       Make spectrum of hues for trace depths, if so.
+#     return _icecream.DEFAULT_PREFIX
+
+
 def _produce_simple_printer(
-    target: __.io.TextIOBase, mname: str, flavor: str # pylint: disable=unused-argument
-) -> __.vehicles.Printer:
+    target: __.io.TextIOBase,
+    # pylint: disable=unused-argument
+    mname: str,
+    flavor: _Flavor,
+    # pylint: enable=unused-argument
+) -> _Printer:
     return __.funct.partial( _simple_print, target = target )
 
 
