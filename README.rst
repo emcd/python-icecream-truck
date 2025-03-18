@@ -67,7 +67,7 @@ or whatever else you can imagine.
 precise control over output prefixes, formatters, custom flavors, etc....
 
 🖨️ **Printer Factory**: Dyanamically associate output functions with debugger
-objects based on module name, flavor, etc... — swap in customized ``print``,
+objects based on module name, flavor, etc.... Swap in customized ``print``,
 ``logging``, ``rich.console``, or other sinks as desired.
 
 📚 **Library-Friendly**: Non-intrusive registration for libraries without
@@ -80,12 +80,25 @@ notwithstanding.)
 Installation 📦
 ===============================================================================
 
+Via `uv <https://github.com/astral-sh/uv/blob/main/README.md>`_ ``pip``
+command:
+
+::
+
+    uv pip install icecream-truck
+
+Or, via ``pip``:
+
 ::
 
     pip install icecream-truck
 
 Examples 💡
 ===============================================================================
+
+Please see the `examples directory
+<https://github.com/emcd/python-icecream-truck/tree/master/examples>`_ for
+greater detail.
 
 Universal Availability
 -------------------------------------------------------------------------------
