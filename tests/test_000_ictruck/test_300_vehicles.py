@@ -281,7 +281,7 @@ def test_350_module_hierarchy( # pylint: disable=too-many-arguments,too-many-loc
 
 
 def test_500_install_basic( vehicles, clean_builtins ):
-    ''' Basic installation adds Truck to builtins with default alias. '''
+    ''' Basic installation into builtins with default alias. '''
     truck = vehicles.install( )
     import builtins
     assert 'ictr' in builtins.__dict__

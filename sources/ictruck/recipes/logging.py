@@ -18,42 +18,59 @@
 #============================================================================#
 
 
-''' Recipes for logging printers. '''
+''' Recipes for integration with standard logging. '''
 
 
 from __future__ import annotations
 
-from ..configuration import (
-    Flavor as _Flavor,
-    FlavorConfiguration as _FlavorConfiguration,
-    VehicleConfiguration as _VehicleConfiguration,
-)
-from ..vehicles import (
-    Printer as _Printer, Truck as _Truck, install as _install )
+import logging as _logging
+
 from . import __
 
 
-def produce_truck( install: bool = True ) -> _Truck:
-    ''' Produces icecream truck that is integrated with 'logging' module. '''
+_validate_arguments = (
+    __.validate_arguments(
+        globalvars = globals( ),
+        errorclass = __.exceptions.ArgumentClassInvalidity ) )
+
+
+@_validate_arguments
+def install(
+    alias: __.InstallAliasArgument = __.builtins_alias_default,
+    # TODO? Aliases map for per-level installations.
+) -> __.Truck:
+    ''' Installs configured truck into builtins.
+
+        Application developers should call this early before importing
+        library packages which may also use the builtin truck.
+    '''
+    truck = produce_truck( )
+    __builtins__[ alias ] = truck
+    return truck
+
+
+@_validate_arguments
+def produce_printer( mname: str, flavor: __.Flavor ) -> __.Printer:
+    ''' Produces printer which maps flavors to logging levels. '''
+    logger = _logging.getLogger( mname )
+    level = (
+        getattr( _logging, flavor.upper( ) ) if isinstance( flavor, str )
+        else _logging.DEBUG )
+    return lambda x: logger.log( level, x )
+
+
+@_validate_arguments
+def produce_truck( ) -> __.Truck:
+    ''' Produces icecream truck which integrates with standard logging. '''
     active_flavors = { None: frozenset( {
         'debug', 'info', 'warning', 'error', 'critical' } ) }
-    flavors: __.AccretiveDictionary[ _Flavor, _FlavorConfiguration ] = (
+    flavors: __.AccretiveDictionary[ __.Flavor, __.FlavorConfiguration ] = (
         __.AccretiveDictionary(
-            {   name: _FlavorConfiguration( )
+            {   name: __.FlavorConfiguration( )
                 for name in active_flavors[ None ] } ) )
-    generalcfg = _VehicleConfiguration( flavors = flavors )
+    generalcfg = __.VehicleConfiguration( flavors = flavors )
     nomargs = dict(
         active_flavors = active_flavors,
         generalcfg = generalcfg,
-        printer_factory = _logger_factory )
-    if install: return _install( **nomargs )
-    return _Truck( **nomargs ) # pyright: ignore
-
-
-def _logger_factory( mname: str, flavor: _Flavor ) -> _Printer:
-    import logging
-    logger = logging.getLogger( mname )
-    level = (
-        getattr( logging, flavor.upper( ) ) if isinstance( flavor, str )
-        else logging.DEBUG )
-    return lambda x: logger.log( level, x )
+        printer_factory = produce_printer )
+    return __.Truck( **nomargs ) # pyright: ignore

@@ -48,54 +48,53 @@ def vehicles( ):
     return cache_import_module( f"{PACKAGE_NAME}.vehicles" )
 
 
-def test_000_produce_truck_default(
-    recipes, vehicles, log_capture, clean_builtins
-):
-    ''' Default produce_truck installs truck in builtins. '''
+def test_011_logger_factory_string_flavors( recipes, log_capture ):
+    ''' Printer factory handles string flavors correctly. '''
+    for flavor in ( 'debug', 'info', 'warning', 'error', 'critical' ):
+        printer = recipes.produce_printer( 'test_module', flavor )
+        printer( f"{flavor} test" )
+        expected_level = getattr( logging, flavor.upper( ) )
+        assert any(
+            r.levelno == expected_level and f"{flavor} test" in r.getMessage( )
+            for r in log_capture.records )
+        log_capture.clear( )
+
+
+def test_012_logger_factory_int_flavor( recipes, log_capture ):
+    ''' Printer factory defaults to DEBUG for integer flavors. '''
+    printer = recipes.produce_printer( 'test_module', 42 )
+    printer( 'int flavor test' )
+    assert any(
+        r.levelno == logging.DEBUG and 'int flavor test' in r.getMessage( )
+        for r in log_capture.records )
+
+
+def test_013_logger_factory_module_name( recipes, log_capture ):
+    ''' Printer factory uses correct module name in logger. '''
+    module_name = 'custom.module'
+    printer = recipes.produce_printer( module_name, 'error' )
+    printer( 'module test' )
+    assert any(
+        r.name == module_name and 'module test' in r.getMessage( )
+        for r in log_capture.records )
+
+
+def test_101_produce_truck_flavors( recipes, clean_builtins ):
+    ''' Truck factory sets expected active flavors. '''
     truck = recipes.produce_truck( )
-    import builtins
-    assert 'ictr' in builtins.__dict__, "Truck not installed in builtins"
-    assert isinstance( truck, vehicles.Truck ), "Not a Truck instance"
-    debugger = truck( 'info' )
-    debugger( 'test message' )
-    assert any(
-        r.levelno == logging.INFO and 'test message' in r.getMessage( )
-        for r in log_capture.records ), "Logging not captured"
-
-
-def test_010_produce_truck_no_install(
-    recipes, vehicles, log_capture
-):
-    ''' produce_truck with install=False does not affect builtins. '''
-    import builtins
-    original = dict( builtins.__dict__ )
-    truck = recipes.produce_truck( install = False )
-    assert builtins.__dict__ == original, "Builtins modified unexpectedly"
-    assert isinstance( truck, vehicles.Truck ), "Not a Truck instance"
-    debugger = truck( 'debug' )
-    debugger( 'debug test' )
-    assert any(
-        r.levelno == logging.DEBUG and 'debug test' in r.getMessage( )
-        for r in log_capture.records ), "Debug logging not captured"
-
-
-def test_020_produce_truck_flavors( recipes, clean_builtins ):
-    ''' produce_truck sets expected active flavors. '''
-    truck = recipes.produce_truck( install = False )
     expected_flavors = { 'debug', 'info', 'warning', 'error', 'critical' }
-    assert None in truck.active_flavors, "No global active flavors"
-    assert truck.active_flavors[ None ] == expected_flavors, (
-        f"Expected {expected_flavors}, got {truck.active_flavors[None]}" )
+    assert None in truck.active_flavors
+    assert truck.active_flavors[ None ] == expected_flavors
     for flavor in expected_flavors:
         debugger = truck( flavor )
-        assert debugger.enabled, f"Flavor '{flavor}' should be enabled"
+        assert debugger.enabled
 
 
-def test_030_produce_truck_generalcfg(
+def test_102_produce_truck_generalcfg(
     recipes, configuration, clean_builtins
 ):
-    ''' produce_truck configures generalcfg with flavors. '''
-    truck = recipes.produce_truck( install = False )
+    ''' Truck factory configures generalcfg with flavors. '''
+    truck = recipes.produce_truck( )
     assert isinstance( truck.generalcfg, configuration.VehicleConfiguration )
     assert set( truck.generalcfg.flavors.keys( ) ) == (
         { 'debug', 'info', 'warning', 'error', 'critical' } )
@@ -105,32 +104,26 @@ def test_030_produce_truck_generalcfg(
             configuration.FlavorConfiguration )
 
 
-def test_040_logger_factory_string_flavors( recipes, log_capture ):
-    ''' _logger_factory handles string flavors correctly. '''
-    for flavor in ( 'debug', 'info', 'warning', 'error', 'critical' ):
-        printer = recipes._logger_factory( 'test_module', flavor )
-        printer( f"{flavor} test" )
-        expected_level = getattr( logging, flavor.upper( ) )
-        assert any(
-            r.levelno == expected_level and f"{flavor} test" in r.getMessage( )
-            for r in log_capture.records ), f"{flavor} not logged correctly"
-        log_capture.clear( )
-
-
-def test_050_logger_factory_int_flavor( recipes, log_capture ):
-    ''' _logger_factory defaults to DEBUG for integer flavors. '''
-    printer = recipes._logger_factory( 'test_module', 42 )
-    printer( 'int flavor test' )
+def test_200_install_truck_default(
+    recipes, vehicles, log_capture, clean_builtins
+):
+    ''' Basic installation into builtins with default alias. '''
+    truck = recipes.install( )
+    import builtins
+    assert 'ictr' in builtins.__dict__
+    assert isinstance( truck, vehicles.Truck )
+    debugger = truck( 'info' )
+    debugger( 'test message' )
     assert any(
-        r.levelno == logging.DEBUG and 'int flavor test' in r.getMessage( )
-        for r in log_capture.records ), "Integer flavor not logged as DEBUG"
+        r.levelno == logging.INFO and 'test message' in r.getMessage( )
+        for r in log_capture.records )
 
 
-def test_060_logger_factory_module_name( recipes, log_capture ):
-    ''' _logger_factory uses correct module name in logger. '''
-    module_name = 'custom.module'
-    printer = recipes._logger_factory( module_name, 'error' )
-    printer( 'module test' )
-    assert any(
-        r.name == module_name and 'module test' in r.getMessage( )
-        for r in log_capture.records ), "Module name not in log record"
+def test_201_install_truck_custom_alias(
+    recipes, vehicles, log_capture, clean_builtins
+):
+    ''' Installation supports custom alias. '''
+    alias = 'custom_truck'
+    recipes.install( alias = alias )
+    import builtins
+    assert alias in builtins.__dict__

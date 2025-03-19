@@ -118,12 +118,12 @@ Library Registration
 
 Libraries can register their own configurations without overriding those of the
 application or other libraries. By default, the name of the calling module is
-used to register a configuration:
+used to register a default configuration:
 
 .. code-block:: python
 
-    from ictruck import ModuleConfiguration, register_module
-    register_module( configuration = ModuleConfiguration( ... ) )
+    from ictruck import register_module
+    register_module( )  # Can pass custom configuration.
 
 Recipes for Customization
 -------------------------------------------------------------------------------

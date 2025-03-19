@@ -177,61 +177,63 @@ PrinterFactory: __.typx.TypeAlias = (
 PrinterFactoryUnion: __.typx.TypeAlias = __.io.TextIOBase | PrinterFactory
 TraceLevelsRegistry: __.typx.TypeAlias = __.cabc.Mapping[ str | None, int ]
 
+InstallAliasArgument: __.typx.TypeAlias = __.typx.Annotated[
+    str,
+    __.typx.Doc(
+        ''' Alias under which the truck is installed in builtins. ''' ),
+]
+ProduceTruckActiveFlavorsArgument: __.typx.TypeAlias = __.typx.Annotated[
+    __.Absential[ ActiveFlavors | ActiveFlavorsRegistry ],
+    __.typx.Doc(
+        ''' Flavors to activate.
+
+            Can be a set, which applies globally across all registered
+            modules. Or, can be a mapping of module names to sets.
+
+            Module-specific entries merge with global entries.
+        ''' ),
+]
+ProduceTruckGeneralcfgArgument: __.typx.TypeAlias = __.typx.Annotated[
+    __.Absential[ _VehicleConfiguration ],
+    __.typx.Doc(
+        ''' General configuration for the truck.
+
+            Top of configuration inheritance hierarchy. If absent,
+            defaults to a suitable configuration for application use.
+        ''' ),
+]
+ProduceTruckPrinterFactoryArgument: __.typx.TypeAlias = __.typx.Annotated[
+    __.Absential[ PrinterFactoryUnion ],
+    __.typx.Doc(
+        ''' Factory which produces callables to output text somewhere.
+
+            May also be writable text stream.
+            Factories take two arguments, module name and flavor, and
+            return a callable which takes one argument, the string
+            produced by a formatter.
+
+            If absent, uses a default.
+        ''' ),
+]
+ProduceTruckTraceLevelsArgument: __.typx.TypeAlias = __.typx.Annotated[
+    __.Absential[ int | TraceLevelsRegistry ],
+    __.typx.Doc(
+        ''' Maximum trace depths.
+
+            Can be an integer, which applies globally across all registered
+            modules. Or, can be a mapping of module names to integers.
+
+            Module-specific entries override global entries.
+        ''' ),
+]
 
 @_validate_arguments
 def install(
-    alias: __.typx.Annotated[
-        str,
-        __.typx.Doc(
-            ''' Alias under which the truck is installed in builtins.
-
-                Defaults to "ictr" if not specified.
-            ''' ),
-    ] = builtins_alias_default,
-    active_flavors: __.typx.Annotated[
-        __.Absential[ ActiveFlavors | ActiveFlavorsRegistry ],
-        __.typx.Doc(
-            ''' Flavors to activate.
-
-                Can be a set, which applies globally across all registered
-                modules. Or, can be a mapping of module names to sets.
-
-                Module-specific entries merge with global entries.
-            ''' ),
-    ] = __.absent,
-    generalcfg: __.typx.Annotated[
-        __.Absential[ _VehicleConfiguration ],
-        __.typx.Doc(
-            ''' General configuration for the truck.
-
-                Top of configuration inheritance hierarchy. If absent,
-                defaults to a suitable configuration for application use.
-            ''' ),
-    ] = __.absent,
-    printer_factory: __.typx.Annotated[
-        __.Absential[ PrinterFactoryUnion ],
-        __.typx.Doc(
-            ''' Factory which produces callables to output text somewhere.
-
-                May also be writable text stream.
-                Factories take two arguments, module name and flavor, and
-                return a callable which takes one argument, the string
-                produced by a formatter.
-
-                If absent, uses a default.
-            ''' ),
-    ] = __.absent,
-    trace_levels: __.typx.Annotated[
-        __.Absential[ int | TraceLevelsRegistry ],
-        __.typx.Doc(
-            ''' Maximum trace depths.
-
-                Can be an integer, which applies globally across all registered
-                modules. Or, can be a mapping of module names to integers.
-
-                Module-specific entries override global entries.
-            ''' ),
-    ] = __.absent,
+    alias: InstallAliasArgument = builtins_alias_default,
+    active_flavors: ProduceTruckActiveFlavorsArgument = __.absent,
+    generalcfg: ProduceTruckGeneralcfgArgument = __.absent,
+    printer_factory: ProduceTruckPrinterFactoryArgument = __.absent,
+    trace_levels: ProduceTruckTraceLevelsArgument = __.absent,
 ) -> Truck:
     ''' Installs configured truck into builtins.
 
@@ -240,6 +242,23 @@ def install(
 
         Library developers should call :py:func:`register_module` instead.
     '''
+    truck = produce_truck(
+        active_flavors = active_flavors,
+        generalcfg = generalcfg,
+        printer_factory = printer_factory,
+        trace_levels = trace_levels )
+    __builtins__[ alias ] = truck
+    return truck
+
+
+@_validate_arguments
+def produce_truck(
+    active_flavors: ProduceTruckActiveFlavorsArgument = __.absent,
+    generalcfg: ProduceTruckGeneralcfgArgument = __.absent,
+    printer_factory: ProduceTruckPrinterFactoryArgument = __.absent,
+    trace_levels: ProduceTruckTraceLevelsArgument = __.absent,
+) -> Truck:
+    ''' Produces icecream truck with some shorthand argument values. '''
     # TODO: Deeper validation of active flavors and trace levels.
     # TODO: Deeper validation of printer factory.
     nomargs: dict[ str, __.typx.Any ] = { }
@@ -261,9 +280,7 @@ def install(
                 { None: trace_levels } )
         else:
             nomargs[ 'trace_levels' ] = __.ImmutableDictionary( trace_levels )
-    truck = Truck( **nomargs )
-    __builtins__[ alias ] = truck
-    return truck
+    return Truck( **nomargs )
 
 
 @_validate_arguments

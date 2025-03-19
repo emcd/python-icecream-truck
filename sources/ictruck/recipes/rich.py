@@ -18,7 +18,12 @@
 #============================================================================#
 
 
-''' Recipes for Rich formatters and printers. '''
+''' Recipes for Rich formatters and printers.
+
+    .. note::
+
+        To use this module, you must have the ``rich`` package installed.
+'''
 
 
 from __future__ import annotations
@@ -28,35 +33,69 @@ import colorama as _colorama
 
 from rich.console import Console as _Console
 
-from ..configuration import (
-    Flavor as _Flavor,
-    Formatter as _Formatter,
-    FormatterControl as _FormatterControl,
-    VehicleConfiguration as _VehicleConfiguration,
-)
-from ..vehicles import (
-    Printer as _Printer, Truck as _Truck, install as _install )
 from . import __
 
 
-# def install( ):
+_validate_arguments = (
+    __.validate_arguments(
+        globalvars = globals( ),
+        errorclass = __.exceptions.ArgumentClassInvalidity ) )
 
 
-def produce_truck( install: bool = True, stderr: bool = True ) -> _Truck:
-    ''' Produces icecream truck which is integrated with 'rich' pacakge. '''
+class ConsoleTextIoInvalidity( __.exceptions.Omnierror, TypeError ):
+    ''' Text stream invalid for use with Rich console. '''
+
+    def __init__( self, stream: __.typx.Any ):
+        super( ).__init__( f"Invalid stream for Rich console: {stream!r}" )
+
+
+ProduceTruckStderrArgument: __.typx.TypeAlias = __.typx.Annotated[
+    bool, __.typx.Doc( ''' Output to standard diagnostic stream? ''' )
+]
+
+
+@_validate_arguments
+def install(
+    alias: __.InstallAliasArgument = __.builtins_alias_default,
+    active_flavors: __.ProduceTruckActiveFlavorsArgument = __.absent,
+    trace_levels: __.ProduceTruckTraceLevelsArgument = __.absent,
+    # TODO? Choice of truck type (console formatter | console printer ).
+    stderr: ProduceTruckStderrArgument = True,
+) -> __.Truck:
+    ''' Installs configured truck into builtins.
+
+        Application developers should call this early before importing
+        library packages which may also use the builtin truck.
+    '''
+    truck = produce_truck(
+        active_flavors = active_flavors,
+        trace_levels = trace_levels,
+        stderr = stderr )
+    __builtins__[ alias ] = truck
+    return truck
+
+
+@_validate_arguments
+def produce_truck(
+    active_flavors: __.ProduceTruckActiveFlavorsArgument = __.absent,
+    trace_levels: __.ProduceTruckTraceLevelsArgument = __.absent,
+    # TODO? Choice of truck type (console formatter | console printer ).
+    stderr: ProduceTruckStderrArgument = True,
+) -> __.Truck:
+    ''' Produces icecream truck which integrates with Rich. '''
     console = _Console( stderr = stderr )
-    generalcfg = _VehicleConfiguration(
+    generalcfg = __.VehicleConfiguration(
         formatter_factory = __.funct.partial(
             _produce_console_formatter, console ) )
     target = __.sys.stderr if stderr else __.sys.stdout
     if not isinstance( target, __.io.TextIOBase ):
-        # TODO: More appropriate error type.
-        raise RuntimeError # noqa: TRY004
+        raise ConsoleTextIoInvalidity( target )
     nomargs: dict[ str, __.typx.Any ] = dict(
+        active_flavors = active_flavors,
         generalcfg = generalcfg,
-        printer_factory = __.funct.partial( _produce_simple_printer, target ) )
-    if install: return _install( **nomargs )
-    return _Truck( **nomargs )
+        printer_factory = __.funct.partial( _produce_simple_printer, target ),
+        trace_levels = trace_levels )
+    return __.produce_truck( **nomargs )
 
 
 # TODO: 'register_module' which adds 'pretty_repr' as formatter.
@@ -71,11 +110,11 @@ def _console_format( console: _Console, value: __.typx.Any ) -> str:
 def _produce_console_formatter(
     console: _Console,
     # pylint: disable=unused-argument
-    control: _FormatterControl,
+    control: __.FormatterControl,
     mname: str,
     flavor: int | str,
     # pylint: enable=unused-argument
-) -> _Formatter:
+) -> __.Formatter:
     return __.funct.partial( _console_format, console )
 
 
@@ -89,9 +128,9 @@ def _produce_simple_printer(
     target: __.io.TextIOBase,
     # pylint: disable=unused-argument
     mname: str,
-    flavor: _Flavor,
+    flavor: __.Flavor,
     # pylint: enable=unused-argument
-) -> _Printer:
+) -> __.Printer:
     return __.funct.partial( _simple_print, target = target )
 
 
