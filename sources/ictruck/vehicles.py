@@ -280,7 +280,8 @@ def install(
         generalcfg = generalcfg,
         printer_factory = printer_factory,
         trace_levels = trace_levels )
-    __builtins__[ alias ] = truck
+    __.install_builtin_safely(
+        alias, truck, _exceptions.AttributeNondisplacement )
     return truck
 
 

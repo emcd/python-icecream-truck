@@ -96,7 +96,8 @@ def install( # pylint: disable=too-many-arguments
         trace_levels = trace_levels,
         mode = mode,
         stderr = stderr )
-    __builtins__[ alias ] = truck
+    __.install_builtin_safely(
+        alias, truck, __.exceptions.AttributeNondisplacement )
     return truck
 
 

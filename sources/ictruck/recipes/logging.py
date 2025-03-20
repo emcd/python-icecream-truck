@@ -45,7 +45,8 @@ def install(
         library packages which may also use the builtin truck.
     '''
     truck = produce_truck( )
-    __builtins__[ alias ] = truck
+    __.install_builtin_safely(
+        alias, truck, __.exceptions.AttributeNondisplacement )
     return truck
 
 

@@ -280,15 +280,17 @@ def test_350_module_hierarchy( # pylint: disable=too-many-arguments,too-many-loc
     assert actual == expected_prefix
 
 
-def test_500_install_basic( vehicles, clean_builtins ):
+def test_500_install_basic( vehicles, exceptions, clean_builtins ):
     ''' Basic installation into builtins with default alias. '''
     truck = vehicles.install( )
     import builtins
     assert 'ictr' in builtins.__dict__
     assert isinstance( truck, vehicles.Truck )
+    with pytest.raises( exceptions.AttributeNondisplacement ):
+        vehicles.install( )
 
 
-def test_510_install_custom_alias( vehicles, clean_builtins ):
+def test_501_install_custom_alias( vehicles, clean_builtins ):
     ''' Installation supports custom alias. '''
     alias = 'custom_truck'
     truck = vehicles.install( alias = alias )
@@ -297,37 +299,38 @@ def test_510_install_custom_alias( vehicles, clean_builtins ):
     assert builtins.__dict__[ alias ] is truck
 
 
-def test_520_install_with_trace_levels( vehicles, clean_builtins ):
+def test_502_install_with_trace_levels( vehicles, clean_builtins ):
     ''' Installation configures trace levels correctly. '''
     truck1 = vehicles.install( trace_levels = 2 )
     assert truck1.trace_levels[ None ] == 2
     levels = { None: 1, 'test': 3, }
-    truck2 = vehicles.install( trace_levels = levels )
+    truck2 = vehicles.install( alias = 'ictr2', trace_levels = levels )
     assert truck2.trace_levels == vehicles.__.ImmutableDictionary( levels )
 
 
-def test_530_install_with_active_flavors( vehicles, clean_builtins ):
+def test_503_install_with_active_flavors( vehicles, clean_builtins ):
     ''' Installation configures active flavors correctly. '''
     truck1 = vehicles.install( active_flavors = { 'debug', 1, } )
     assert truck1.active_flavors[ None ] == { 'debug', 1, }
     flavors = { None: { 'x', }, 'test': { 'y', }, }
-    truck2 = vehicles.install( active_flavors = flavors )
+    truck2 = vehicles.install( alias = 'ictr2', active_flavors = flavors )
     expected = vehicles.__.ImmutableDictionary( {
         k: set( v ) for k, v in flavors.items( ) } )
     assert truck2.active_flavors == expected
 
 
-def test_540_install_with_printer_factory(
+def test_504_install_with_printer_factory(
     vehicles, clean_builtins, simple_output
 ):
     ''' Installation supports printer_factory as callable and TextIOBase. '''
     truck1 = vehicles.install( printer_factory = lambda m, f: print )
     assert callable( truck1.printer_factory )
-    truck2 = vehicles.install( printer_factory = simple_output )
+    truck2 = vehicles.install(
+        alias = 'ictr2', printer_factory = simple_output )
     assert isinstance( truck2.printer_factory, vehicles.__.io.TextIOBase )
 
 
-def test_550_install_with_generalcfg(
+def test_505_install_with_generalcfg(
     vehicles, clean_builtins, configuration
 ):
     ''' Installation supports custom vehicle configuration. '''
