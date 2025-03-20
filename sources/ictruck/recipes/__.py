@@ -20,7 +20,7 @@
 
 ''' Common imports used by recipes. '''
 
-# ruff: noqa: F401,F403
+# ruff: noqa: F401,F403,F405
 # pylint: disable=unused-import,wildcard-import
 
 
@@ -30,3 +30,9 @@ from .. import exceptions
 from ..__ import *
 from ..configuration import *
 from ..vehicles import *
+
+
+ProduceTruckFlavorsArgument: typx.TypeAlias = typx.Annotated[
+    Absential[ FlavorsRegistry ],
+    typx.Doc( ''' Registry of flavor identifiers to configurations. ''' ),
+]

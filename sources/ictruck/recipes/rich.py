@@ -57,6 +57,7 @@ ProduceTruckStderrArgument: __.typx.TypeAlias = __.typx.Annotated[
 @_validate_arguments
 def install(
     alias: __.InstallAliasArgument = __.builtins_alias_default,
+    flavors: __.ProduceTruckFlavorsArgument = __.absent,
     active_flavors: __.ProduceTruckActiveFlavorsArgument = __.absent,
     trace_levels: __.ProduceTruckTraceLevelsArgument = __.absent,
     # TODO? Choice of truck type (console formatter | console printer ).
@@ -68,6 +69,7 @@ def install(
         library packages which may also use the builtin truck.
     '''
     truck = produce_truck(
+        flavors = flavors,
         active_flavors = active_flavors,
         trace_levels = trace_levels,
         stderr = stderr )
@@ -77,6 +79,7 @@ def install(
 
 @_validate_arguments
 def produce_truck(
+    flavors: __.ProduceTruckFlavorsArgument = __.absent,
     active_flavors: __.ProduceTruckActiveFlavorsArgument = __.absent,
     trace_levels: __.ProduceTruckTraceLevelsArgument = __.absent,
     # TODO? Choice of truck type (console formatter | console printer ).
@@ -84,9 +87,12 @@ def produce_truck(
 ) -> __.Truck:
     ''' Produces icecream truck which integrates with Rich. '''
     console = _Console( stderr = stderr )
+    gc_nomargs = { }
+    if not __.is_absent( flavors ): gc_nomargs[ 'flavors' ] = flavors
     generalcfg = __.VehicleConfiguration(
         formatter_factory = __.funct.partial(
-            _produce_console_formatter, console ) )
+            _produce_console_formatter, console ),
+        **gc_nomargs ) # pyright: ignore
     target = __.sys.stderr if stderr else __.sys.stdout
     if not isinstance( target, __.io.TextIOBase ):
         raise ConsoleTextIoInvalidity( target )

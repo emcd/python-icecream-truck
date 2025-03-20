@@ -95,8 +95,11 @@ class ModuleConfiguration(
     ''' Per-module or per-package configuration. '''
 
     # pylint: disable=invalid-field-call
-    flavors: FlavorsRegistry = ( # pyright: ignore
-        __.dcls.field( default_factory = __.AccretiveDictionary ) )
+    flavors: __.typx.Annotated[
+        FlavorsRegistry,
+        __.typx.Doc(
+            ''' Registry of flavor identifiers to configurations. ''' ),
+    ] = __.dcls.field( default_factory = __.AccretiveDictionary ) # pyright: ignore
     formatter_factory: __.typx.Annotated[
         __.typx.Optional[ FormatterFactory ],
         __.typx.Doc(
@@ -136,8 +139,11 @@ class VehicleConfiguration(
     ''' Per-vehicle configuration. '''
 
     # pylint: disable=invalid-field-call
-    flavors: FlavorsRegistry = (
-        __.dcls.field( default_factory = _produce_default_flavors ) )
+    flavors: __.typx.Annotated[
+        FlavorsRegistry,
+        __.typx.Doc(
+            ''' Registry of flavor identifiers to configurations. ''' ),
+    ] = __.dcls.field( default_factory = _produce_default_flavors )
     formatter_factory: __.typx.Annotated[
         FormatterFactory,
         __.typx.Doc(
