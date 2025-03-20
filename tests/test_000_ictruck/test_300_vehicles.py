@@ -262,15 +262,14 @@ def test_350_module_hierarchy( # pylint: disable=too-many-arguments,too-many-loc
     module_name, parent_modules, flavor_overrides, expected_prefix,
 ):
     ''' Module hierarchy respects flavor overrides with prefix_emitter. '''
-    module_configs = {
-        mod_name: configuration.ModuleConfiguration( prefix_emitter = prefix )
-        for mod_name, prefix in parent_modules.items( )
-    }
-    for mod_name, flavor_prefix in flavor_overrides.items( ):
-        module_configs[ mod_name ].flavors[ 0 ] = (
-            configuration.FlavorConfiguration(
-                prefix_emitter = flavor_prefix ) )
-    truck = vehicles.Truck( modulecfgs = module_configs )
+    mconfigs = { }
+    for mname, prefix in parent_modules.items( ):
+        mc_nomargs = dict( prefix_emitter = prefix )
+        if mname in flavor_overrides:
+            mc_nomargs[ 'flavors' ] = { 0: configuration.FlavorConfiguration(
+                prefix_emitter = flavor_overrides[ mname ] ) }
+        mconfigs[ mname ] = configuration.ModuleConfiguration( **mc_nomargs )
+    truck = vehicles.Truck( modulecfgs = mconfigs )
     ic_config = vehicles._produce_ic_configuration( truck, module_name, 0 )
     prefix_emitter = ic_config[ 'prefix_emitter' ]
     actual = (

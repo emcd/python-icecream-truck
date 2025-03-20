@@ -340,8 +340,7 @@ def register_module(
     else: truck = __builtins__[ builtins_alias_default ]
     nomargs: dict[ str, __.typx.Any ] = { }
     if not __.is_absent( flavors ):
-        # TODO: Immutable dictionary.
-        nomargs[ 'flavors' ] = __.AccretiveDictionary( flavors )
+        nomargs[ 'flavors' ] = __.ImmutableDictionary( flavors )
     if not __.is_absent( formatter_factory ):
         nomargs[ 'formatter_factory' ] = formatter_factory
     if not __.is_absent( include_context ):

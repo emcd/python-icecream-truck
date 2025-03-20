@@ -28,10 +28,11 @@ import icecream as _icecream
 from . import __
 
 
-def _produce_default_flavors( ) -> __.AccretiveDictionary[
+def produce_default_flavors( ) -> __.ImmutableDictionary[
     Flavor, FlavorConfiguration
 ]:
-    return __.AccretiveDictionary( {
+    ''' Produces flavors for trace depths 0 through 9. '''
+    return __.ImmutableDictionary( {
         i: FlavorConfiguration(
             prefix_emitter = f"TRACE{i}| " ) for i in range( 10 ) } )
 
@@ -93,7 +94,7 @@ class ModuleConfiguration( metaclass = __.ImmutableCompleteDataclass ):
         FlavorsRegistry,
         __.typx.Doc(
             ''' Registry of flavor identifiers to configurations. ''' ),
-    ] = __.dcls.field( default_factory = __.AccretiveDictionary ) # pyright: ignore
+    ] = __.dcls.field( default_factory = __.ImmutableDictionary ) # pyright: ignore
     formatter_factory: __.typx.Annotated[
         __.typx.Optional[ FormatterFactory ],
         __.typx.Doc(
@@ -135,7 +136,7 @@ class VehicleConfiguration( metaclass = __.ImmutableCompleteDataclass ):
         FlavorsRegistry,
         __.typx.Doc(
             ''' Registry of flavor identifiers to configurations. ''' ),
-    ] = __.dcls.field( default_factory = _produce_default_flavors )
+    ] = __.dcls.field( default_factory = produce_default_flavors )
     formatter_factory: __.typx.Annotated[
         FormatterFactory,
         __.typx.Doc(
@@ -162,8 +163,7 @@ class VehicleConfiguration( metaclass = __.ImmutableCompleteDataclass ):
 
 Flavor: __.typx.TypeAlias = int | str
 FlavorsRegistry: __.typx.TypeAlias = (
-    # TODO: Immutable dictionary.
-    __.AccretiveDictionary[ Flavor, FlavorConfiguration ] )
+    __.ImmutableDictionary[ Flavor, FlavorConfiguration ] )
 FlavorsRegistryLiberal: __.typx.TypeAlias = (
     __.cabc.Mapping[ Flavor, FlavorConfiguration ] )
 Formatter: __.typx.TypeAlias = __.typx.Callable[ [ __.typx.Any ], str ]

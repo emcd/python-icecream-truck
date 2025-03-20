@@ -65,8 +65,8 @@ def produce_truck( ) -> __.Truck:
     ''' Produces icecream truck which integrates with standard logging. '''
     active_flavors = { None: frozenset( {
         'debug', 'info', 'warning', 'error', 'critical' } ) }
-    flavors: __.AccretiveDictionary[ __.Flavor, __.FlavorConfiguration ] = (
-        __.AccretiveDictionary(
+    flavors: __.ImmutableDictionary[ __.Flavor, __.FlavorConfiguration ] = (
+        __.ImmutableDictionary(
             {   name: __.FlavorConfiguration( )
                 for name in active_flavors[ None ] } ) )
     generalcfg = __.VehicleConfiguration( flavors = flavors )
