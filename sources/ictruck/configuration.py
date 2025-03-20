@@ -65,7 +65,7 @@ class FlavorConfiguration(
                 Takes formatter control, module name, and flavor as arguments.
                 Returns formatter to convert an argument to a string.
 
-                Default ``None`` inherits from module configuration.
+                Default ``None`` inherits from cumulative configuration.
             ''' ),
     ] = None
     include_context: __.typx.Annotated[
@@ -73,7 +73,7 @@ class FlavorConfiguration(
         __.typx.Doc(
             ''' Include stack frame with output?
 
-                Default ``None`` inherits from module configuration.
+                Default ``None`` inherits from cumulative configuration.
             ''' ),
     ] = None
     prefix_emitter: __.typx.Annotated[
@@ -84,7 +84,7 @@ class FlavorConfiguration(
                 Factory takes formatter control, module name, and flavor as
                 arguments. Returns prefix string.
 
-                Default ``None`` inherits from module configuration.
+                Default ``None`` inherits from cumulative configuration.
             ''' ),
     ] = None
 
@@ -108,7 +108,7 @@ class ModuleConfiguration(
                 Takes formatter control, module name, and flavor as arguments.
                 Returns formatter to convert an argument to a string.
 
-                Default ``None`` inherits from vehicle configuration.
+                Default ``None`` inherits from cumulative configuration.
             ''' ),
     ] = None
     include_context: __.typx.Annotated[
@@ -116,7 +116,7 @@ class ModuleConfiguration(
         __.typx.Doc(
             ''' Include stack frame with output?
 
-                Default ``None`` inherits from vehicle configuration.
+                Default ``None`` inherits from cumulative configuration.
             ''' ),
     ] = None
     prefix_emitter: __.typx.Annotated[
@@ -127,7 +127,7 @@ class ModuleConfiguration(
                 Factory takes formatter control, module name, and flavor as
                 arguments. Returns prefix string.
 
-                Default ``None`` inherits from instance configuration.
+                Default ``None`` inherits from cumulative configuration.
             ''' ),
     ] = None
     # pylint: enable=invalid-field-call

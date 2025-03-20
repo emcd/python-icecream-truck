@@ -55,11 +55,11 @@ def vehicles( ):
     return cache_import_module( f"{PACKAGE_NAME}.vehicles" )
 
 
-def test_011_console_formatter_output( recipes, simple_output ):
+def test_011_console_formatter_output( recipes, configuration, simple_output ):
     ''' Console formatter produces expected rich output. '''
     console = Console( file = simple_output, force_terminal = True )
-    formatter = recipes._produce_console_formatter(
-        console, None, 'test_module', 1 )
+    formatter = recipes.produce_console_formatter(
+        console, configuration.FormatterControl( ), 'test', 1 )
     value = { 'key': 'value' }
     result = formatter( value )
     assert 'key' in result and 'value' in result
@@ -68,82 +68,92 @@ def test_011_console_formatter_output( recipes, simple_output ):
 
 def test_012_simple_printer_output( recipes, simple_output ):
     ''' Simple printer outputs text to target stream. '''
-    printer = (
-        recipes._produce_simple_printer(
-            simple_output, 'test_module', 1 ) )
+    printer = recipes.produce_simple_printer( simple_output, 'test', 1 )
     text = "Test output"
     printer( text )
     assert simple_output.getvalue( ) == "Test output\n"
 
 
-def test_013_simple_printer_stderr( recipes, simple_output, monkeypatch ):
-    ''' Simple printer respects stderr target. '''
-    monkeypatch.setattr( sys, 'stderr', simple_output )
-    printer = (
-        recipes._produce_simple_printer( sys.stderr, 'test_module', 1 ) )
-    text = "Error output"
+def test_013_console_printer_output( recipes, simple_output ):
+    ''' Console printer outputs text with Rich styling. '''
+    console = Console( file = simple_output, force_terminal = True )
+    printer = recipes.produce_console_printer( console, 'test', 1 )
+    text = "Rich output"
     printer( text )
-    assert simple_output.getvalue( ) == "Error output\n"
+    output = simple_output.getvalue( )
+    assert "Rich output" in output
+    assert '\n' in output  # Rich console adds newline
 
 
-def test_014_console_text_io_invalidity( recipes, monkeypatch ):
+# def test_014_pretty_formatter_output( recipes, configuration ):
+#     ''' Pretty formatter produces plain-text pretty output. '''
+#     formatter = recipes.produce_pretty_formatter(
+#         configuration.FormatterControl( ), 'test', 1 )
+#     # Force multi-line output by limiting width
+#     formatter = lambda x: formatter( x, max_width = 10 )
+#     value = { 'a': [ 1, 2, 3 ], 'b': 'test' }
+#     result = formatter( value )
+#     assert "'a': [1, 2, 3]" in result  # Pretty-printed structure
+#     assert "'b': 'test'" in result
+#     assert '\n' in result  # Multi-line output
+
+
+def test_015_console_text_io_invalidity( recipes, monkeypatch ):
     ''' Producing truck with invalid IO raises exception. '''
     from unittest.mock import Mock
-    invalid_stream = Mock( spec = [ ] )  # Mock with no TextIOBase methods
+    invalid_stream = Mock( spec = [ ] )
     monkeypatch.setattr( sys, 'stdout', invalid_stream )
     with pytest.raises( recipes.ConsoleTextIoInvalidity ):
-        recipes.produce_truck( stderr = False, trace_levels = 3 )
+        recipes.produce_truck( stderr = False )
 
 
-def test_101_produce_truck_default(
+def test_101_produce_truck_formatter_mode(
     recipes, base, vehicles, simple_output, monkeypatch
 ):
-    ''' Truck factory produces truck with default settings. '''
+    ''' Truck in Formatter mode uses console formatter and simple printer. '''
     monkeypatch.setattr( sys, 'stderr', simple_output )
-    truck = recipes.produce_truck( trace_levels = 0 )  # Enable trace level 0
-    assert isinstance( truck, vehicles.Truck )
+    truck = recipes.produce_truck(
+        mode = recipes.Modes.Formatter, trace_levels = 0 )
     assert isinstance( truck.generalcfg.formatter_factory, base.funct.partial )
+    assert isinstance( truck.printer_factory, base.funct.partial )
     debugger = truck( 0 )
-    debugger( "Test trace" )
+    debugger( { 'key': 'value' } )
     output = simple_output.getvalue( )
-    assert "Test trace" in output
+    assert 'key' in output and 'value' in output
+    assert '\n' in output
 
 
-def test_102_produce_truck_trace_levels(
-    recipes, vehicles, simple_output, monkeypatch
-):
-    ''' Truck factory respects trace levels. '''
-    monkeypatch.setattr( sys, 'stderr', simple_output )
-    truck = recipes.produce_truck( trace_levels = 2 )
-    assert truck.trace_levels[ None ] == 2
-    debugger0 = truck( 0 )
-    debugger1 = truck( 1 )
-    debugger2 = truck( 2 )
-    debugger3 = truck( 3 )
-    debugger0( "Trace 0" )
-    debugger1( "Trace 1" )
-    debugger2( "Trace 2" )
-    debugger3( "Trace 3" )
-    output = simple_output.getvalue( )
-    assert "Trace 0" in output
-    assert "Trace 1" in output
-    assert "Trace 2" in output
-    assert "Trace 3" not in output  # Disabled due to trace level
-
-
-def test_103_produce_truck_active_flavors( # pylint: disable=too-many-locals
+def test_102_produce_truck_printer_mode(
     recipes, base, vehicles, simple_output, monkeypatch
 ):
-    ''' Truck factory respects active flavors. '''
+    ''' Truck in Printer mode uses pretty formatter and console printer. '''
+    monkeypatch.setattr( sys, 'stderr', simple_output )
+    truck = recipes.produce_truck(
+        mode = recipes.Modes.Printer, trace_levels = 0 )
+    assert (
+        truck.generalcfg.formatter_factory
+        == recipes.produce_pretty_formatter )
+    assert isinstance( truck.printer_factory, base.funct.partial )
+    debugger = truck( 0 )
+    debugger( { 'key': 'value' } )
+    output = simple_output.getvalue( )
+    assert "'key': 'value'" in output  # Pretty-printed
+    assert '\n' in output
+
+
+def test_103_produce_truck_active_flavors( # pylint: disable=too-many-arguments,too-many-locals
+    recipes, base, configuration, vehicles, simple_output, monkeypatch
+):
+    ''' Truck factory respects active flavors in Formatter mode. '''
     monkeypatch.setattr( sys, 'stderr', simple_output )
     flavors = base.AccretiveDictionary(
-        info = vehicles._FlavorConfiguration( ),
-        error = vehicles._FlavorConfiguration( ),
-        debug = vehicles._FlavorConfiguration( ) )
+        info = configuration.FlavorConfiguration( ),
+        error = configuration.FlavorConfiguration( ),
+        debug = configuration.FlavorConfiguration( ) )
     truck = recipes.produce_truck(
         flavors = flavors,
-        active_flavors = { 'info', 'error' }
-    )
+        active_flavors = { 'info', 'error' },
+        mode = recipes.Modes.Formatter )
     assert truck.active_flavors[ None ] == { 'info', 'error' }
     debugger_info = truck( 'info' )
     debugger_error = truck( 'error' )
@@ -154,15 +164,15 @@ def test_103_produce_truck_active_flavors( # pylint: disable=too-many-locals
     output = simple_output.getvalue( )
     assert "Info message" in output
     assert "Error message" in output
-    assert "Debug message" not in output  # Disabled due to inactive flavor
+    assert "Debug message" not in output
 
 
 def test_200_install_truck_default(
     recipes, vehicles, simple_output, clean_builtins, monkeypatch
 ):
-    ''' Basic installation into builtins with default alias. '''
+    ''' Basic installation with default alias in Formatter mode. '''
     monkeypatch.setattr( sys, 'stderr', simple_output )
-    truck = recipes.install( trace_levels = 0 )  # Enable trace level 0
+    truck = recipes.install( trace_levels = 0 )
     import builtins
     assert 'ictr' in builtins.__dict__
     assert isinstance( truck, vehicles.Truck )
@@ -183,9 +193,9 @@ def test_201_install_truck_custom_alias( recipes, vehicles, clean_builtins ):
 def test_202_install_truck_trace_levels(
     recipes, vehicles, simple_output, clean_builtins, monkeypatch
 ):
-    ''' Installation respects trace levels. '''
+    ''' Installation respects trace levels in Printer mode. '''
     monkeypatch.setattr( sys, 'stderr', simple_output )
-    truck = recipes.install( trace_levels = 1 )
+    truck = recipes.install( trace_levels = 1, mode = recipes.Modes.Printer )
     debugger0 = truck( 0 )
     debugger1 = truck( 1 )
     debugger2 = truck( 2 )
@@ -196,3 +206,19 @@ def test_202_install_truck_trace_levels(
     assert "Trace 0" in output
     assert "Trace 1" in output
     assert "Trace 2" not in output
+
+
+def test_300_register_module( # pylint: disable=too-many-arguments
+    recipes, base, configuration, vehicles,
+    simple_output, clean_builtins, monkeypatch,
+):
+    monkeypatch.setattr( sys, 'stderr', simple_output )
+    truck = recipes.install( trace_levels = 0, active_flavors = { 'debug' } )
+    recipes.register_module(
+        prefix_emitter = 'Rich| ',
+        flavors = base.AccretiveDictionary( {
+            'debug': configuration.FlavorConfiguration( ) } ) )
+    debugger = truck( 'debug' )
+    debugger( { 'key': 'value' } )
+    output = simple_output.getvalue( )
+    assert "Rich| {'key': 'value'}" in output

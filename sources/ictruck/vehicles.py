@@ -26,14 +26,8 @@ from __future__ import annotations
 import icecream as _icecream
 
 from . import __
+from . import configuration as _cfg
 from . import exceptions as _exceptions
-from .configuration import (
-    Flavor as _Flavor,
-    FormatterControl as _FormatterControl,
-    FlavorConfiguration as _FlavorConfiguration,
-    ModuleConfiguration as _ModuleConfiguration,
-    VehicleConfiguration as _VehicleConfiguration,
-)
 
 
 # pylint: disable=import-error,import-private-name
@@ -70,16 +64,16 @@ class Truck(
             ''' ),
     ] = __.dcls.field( default_factory = __.ImmutableDictionary ) # pyright: ignore
     generalcfg: __.typx.Annotated[
-        _VehicleConfiguration,
+        _cfg.VehicleConfiguration,
         __.typx.Doc(
             ''' General configuration.
 
                 Top of configuration inheritance hierarchy.
                 Default is suitable for application use.
             ''' ),
-    ] = __.dcls.field( default_factory = _VehicleConfiguration )
+    ] = __.dcls.field( default_factory = _cfg.VehicleConfiguration )
     modulecfgs: __.typx.Annotated[
-        __.AccretiveDictionary[ str, _ModuleConfiguration ],
+        __.AccretiveDictionary[ str, _cfg.ModuleConfiguration ],
         __.typx.Doc(
             ''' Registry of per-module configurations.
 
@@ -113,7 +107,7 @@ class Truck(
         default_factory = lambda: __.ImmutableDictionary( { None: -1 } ) )
     _debuggers: __.typx.Annotated[
         __.AccretiveDictionary[
-            tuple[ str, _Flavor ], _icecream.IceCreamDebugger ],
+            tuple[ str, _cfg.Flavor ], _icecream.IceCreamDebugger ],
         __.typx.Doc(
             ''' Cache of debugger instances by module and flavor. ''' ),
     ] = __.dcls.field( default_factory = __.AccretiveDictionary ) # pyright: ignore
@@ -124,7 +118,7 @@ class Truck(
     # pylint: enable=invalid-field-call
 
     @_validate_arguments
-    def __call__( self, flavor: _Flavor ) -> _icecream.IceCreamDebugger:
+    def __call__( self, flavor: _cfg.Flavor ) -> _icecream.IceCreamDebugger:
         ''' Vends flavor of Icecream debugger. '''
         mname = _discover_invoker_module_name( )
         cache_index = ( mname, flavor )
@@ -132,7 +126,7 @@ class Truck(
             with self._debuggers_lock: # pylint: disable=not-context-manager
                 return self._debuggers[ cache_index ] # pylint: disable=unsubscriptable-object
         configuration = _produce_ic_configuration( self, mname, flavor )
-        control = _FormatterControl( )
+        control = _cfg.FormatterControl( )
         initargs = _calculate_ic_initargs(
             self, configuration, control, mname, flavor )
         debugger = _icecream.IceCreamDebugger( **initargs )
@@ -152,7 +146,7 @@ class Truck(
     def register_module(
         self,
         name: __.Absential[ str ] = __.absent,
-        configuration: __.Absential[ _ModuleConfiguration ] = __.absent,
+        configuration: __.Absential[ _cfg.ModuleConfiguration ] = __.absent,
     ) -> None:
         ''' Registers configuration for module.
 
@@ -164,16 +158,16 @@ class Truck(
         if __.is_absent( name ):
             name = _discover_invoker_module_name( )
         if __.is_absent( configuration ):
-            configuration = _ModuleConfiguration( )
+            configuration = _cfg.ModuleConfiguration( )
         self.modulecfgs[ name ] = configuration # pylint: disable=unsupported-assignment-operation
 
 
-ActiveFlavors: __.typx.TypeAlias = __.cabc.Set[ _Flavor ]
+ActiveFlavors: __.typx.TypeAlias = __.cabc.Set[ _cfg.Flavor ]
 ActiveFlavorsRegistry: __.typx.TypeAlias = (
     __.cabc.Mapping[ str | None, ActiveFlavors ] )
 Printer: __.typx.TypeAlias = __.cabc.Callable[ [ str ], None ]
 PrinterFactory: __.typx.TypeAlias = (
-    __.cabc.Callable[ [ str, _Flavor ], Printer ] )
+    __.cabc.Callable[ [ str, _cfg.Flavor ], Printer ] )
 PrinterFactoryUnion: __.typx.TypeAlias = __.io.TextIOBase | PrinterFactory
 TraceLevelsRegistry: __.typx.TypeAlias = __.cabc.Mapping[ str | None, int ]
 
@@ -193,8 +187,12 @@ ProduceTruckActiveFlavorsArgument: __.typx.TypeAlias = __.typx.Annotated[
             Module-specific entries merge with global entries.
         ''' ),
 ]
+ProduceTruckFlavorsArgument: __.typx.TypeAlias = __.typx.Annotated[
+    __.Absential[ _cfg.FlavorsRegistry ],
+    __.typx.Doc( ''' Registry of flavor identifiers to configurations. ''' ),
+]
 ProduceTruckGeneralcfgArgument: __.typx.TypeAlias = __.typx.Annotated[
-    __.Absential[ _VehicleConfiguration ],
+    __.Absential[ _cfg.VehicleConfiguration ],
     __.typx.Doc(
         ''' General configuration for the truck.
 
@@ -224,6 +222,36 @@ ProduceTruckTraceLevelsArgument: __.typx.TypeAlias = __.typx.Annotated[
             modules. Or, can be a mapping of module names to integers.
 
             Module-specific entries override global entries.
+        ''' ),
+]
+RegisterModuleFormatterFactoryArgument: __.typx.TypeAlias = __.typx.Annotated[
+    __.Absential[ _cfg.FormatterFactory ],
+    __.typx.Doc(
+        ''' Factory which produces formatter callable.
+
+            Takes formatter control, module name, and flavor as arguments.
+            Returns formatter to convert an argument to a string.
+        ''' ),
+]
+RegisterModuleIncludeContextArgument: __.typx.TypeAlias = __.typx.Annotated[
+    __.Absential[ bool ],
+    __.typx.Doc( ''' Include stack frame with output? ''' ),
+]
+RegisterModuleNameArgument: __.typx.TypeAlias = __.typx.Annotated[
+    __.Absential[ str ],
+    __.typx.Doc(
+        ''' Name of the module to register.
+
+            If absent, infers the current module name.
+        ''' ),
+]
+RegisterModulePrefixEmitterArgument: __.typx.TypeAlias = __.typx.Annotated[
+    __.Absential[ _cfg.PrefixEmitterUnion ],
+    __.typx.Doc(
+        ''' String or factory which produces output prefix string.
+
+            Factory takes formatter control, module name, and flavor as
+            arguments. Returns prefix string.
         ''' ),
 ]
 
@@ -285,22 +313,11 @@ def produce_truck(
 
 @_validate_arguments
 def register_module(
-    name: __.typx.Annotated[
-        __.Absential[ str ],
-        __.typx.Doc(
-            ''' Name of the module to register.
-
-                If absent, infers the current module name.
-            ''' ),
-    ] = __.absent,
-    configuration: __.typx.Annotated[
-        __.Absential[ _ModuleConfiguration ],
-        __.typx.Doc(
-            ''' Configuration for the module.
-
-                If absent, uses a default configuration.
-            ''' ),
-    ] = __.absent,
+    name: RegisterModuleNameArgument = __.absent,
+    flavors: ProduceTruckFlavorsArgument = __.absent,
+    formatter_factory: RegisterModuleFormatterFactoryArgument = __.absent,
+    include_context: RegisterModuleIncludeContextArgument = __.absent,
+    prefix_emitter: RegisterModulePrefixEmitterArgument = __.absent,
 ) -> None:
     ''' Registers module configuration on the builtin truck.
 
@@ -315,6 +332,16 @@ def register_module(
         truck = Truck( printer_factory = lambda mname, flavor: lambda x: None )
         __builtins__[ builtins_alias_default ] = truck
     else: truck = __builtins__[ builtins_alias_default ]
+    nomargs: dict[ str, __.typx.Any ] = { }
+    if not __.is_absent( flavors ):
+        nomargs[ 'flavors' ] = flavors
+    if not __.is_absent( formatter_factory ):
+        nomargs[ 'formatter_factory' ] = formatter_factory
+    if not __.is_absent( include_context ):
+        nomargs[ 'include_context' ] = include_context
+    if not __.is_absent( prefix_emitter ):
+        nomargs[ 'prefix_emitter' ] = prefix_emitter
+    configuration = _cfg.ModuleConfiguration( **nomargs )
     truck.register_module( name = name, configuration = configuration )
 
 
@@ -342,9 +369,9 @@ def _calculate_effective_trace_level(
 def _calculate_ic_initargs(
     truck: Truck,
     configuration: __.ImmutableDictionary[ str, __.typx.Any ],
-    control: _FormatterControl,
+    control: _cfg.FormatterControl,
     mname: str,
-    flavor: _Flavor,
+    flavor: _cfg.Flavor,
 ) -> dict[ str, __.typx.Any ]:
     nomargs: dict[ str, __.typx.Any ] = { }
     nomargs[ 'argToStringFunction' ] = (
@@ -408,9 +435,9 @@ def _merge_ic_configuration(
 
 
 def _produce_ic_configuration(
-    vehicle: Truck, mname: str, flavor: _Flavor
+    vehicle: Truck, mname: str, flavor: _cfg.Flavor
 ) -> __.ImmutableDictionary[ str, __.typx.Any ]:
-    fconfigs: list[ _FlavorConfiguration ] = [ ]
+    fconfigs: list[ _cfg.FlavorConfiguration ] = [ ]
     vconfig = vehicle.generalcfg
     configd: dict[ str, __.typx.Any ] = {
         field.name: getattr( vconfig, field.name )

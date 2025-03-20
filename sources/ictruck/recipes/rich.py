@@ -29,9 +29,9 @@
 from __future__ import annotations
 
 import colorama as _colorama
-# import icecream as _icecream
 
 from rich.console import Console as _Console
+from rich.pretty import pretty_repr as _pretty_repr
 
 from . import __
 
@@ -49,18 +49,40 @@ class ConsoleTextIoInvalidity( __.exceptions.Omnierror, TypeError ):
         super( ).__init__( f"Invalid stream for Rich console: {stream!r}" )
 
 
+class Modes( __.enum.Enum ):
+    ''' Operation modes for Rich truck. '''
+    Formatter = 'formatter'
+    Printer = 'printer'
+
+
+ProduceTruckModeArgument: __.typx.TypeAlias = __.typx.Annotated[
+    Modes,
+    __.typx.Doc(
+        ''' Operation mode.
+
+            ``Formatter`` uses Rich to highlight and pretty text prior to
+            printing (output). Text from non-Rich formatters will be printed
+            as-is. Safer, but slightly more boring option.
+            ``Printer`` uses Rich to highlight and pretty text while printing
+            (output). Text from non-Rich formatters will be potentially be
+            highlighted and prettied. If the text already contains ANSI SGR
+            sequences (e.g., terminal colorization), then it might be
+            reprocessed by the printer, causing visual artifacts. Less safe,
+            but more vibrant option.
+        ''' ),
+]
 ProduceTruckStderrArgument: __.typx.TypeAlias = __.typx.Annotated[
     bool, __.typx.Doc( ''' Output to standard diagnostic stream? ''' )
 ]
 
 
 @_validate_arguments
-def install(
+def install( # pylint: disable=too-many-arguments
     alias: __.InstallAliasArgument = __.builtins_alias_default,
     flavors: __.ProduceTruckFlavorsArgument = __.absent,
     active_flavors: __.ProduceTruckActiveFlavorsArgument = __.absent,
     trace_levels: __.ProduceTruckTraceLevelsArgument = __.absent,
-    # TODO? Choice of truck type (console formatter | console printer ).
+    mode: ProduceTruckModeArgument = Modes.Formatter,
     stderr: ProduceTruckStderrArgument = True,
 ) -> __.Truck:
     ''' Installs configured truck into builtins.
@@ -72,9 +94,66 @@ def install(
         flavors = flavors,
         active_flavors = active_flavors,
         trace_levels = trace_levels,
+        mode = mode,
         stderr = stderr )
     __builtins__[ alias ] = truck
     return truck
+
+
+@_validate_arguments
+def produce_console_formatter(
+    console: _Console,
+    # pylint: disable=unused-argument
+    control: __.FormatterControl,
+    mname: str,
+    flavor: int | str,
+    # pylint: enable=unused-argument
+) -> __.Formatter:
+    ''' Produces formatter which uses Rich highlighter and prettier. '''
+    return __.funct.partial( _console_format, console )
+
+
+@_validate_arguments
+def produce_console_printer(
+    console: _Console,
+    # pylint: disable=unused-argument
+    mname: str,
+    flavor: __.Flavor,
+    # pylint: enable=unused-argument
+) -> __.Printer:
+    ''' Produces a printer that uses Rich console printing.
+
+        .. note::
+
+            May reprocess ANSI SGR codes or markup from formatters, potentially
+            causing visual artifacts. Be careful to use this only with "safe"
+            formatters.
+    '''
+    return __.funct.partial( _console_print, console )
+
+
+@_validate_arguments
+def produce_pretty_formatter(
+    # pylint: disable=unused-argument
+    control: __.FormatterControl,
+    mname: str,
+    flavor: int | str,
+    # pylint: enable=unused-argument
+) -> __.Formatter:
+    ''' Produces formatter which uses Rich prettier. '''
+    return _pretty_repr
+
+
+@_validate_arguments
+def produce_simple_printer(
+    target: __.io.TextIOBase,
+    # pylint: disable=unused-argument
+    mname: str,
+    flavor: __.Flavor,
+    # pylint: enable=unused-argument
+) -> __.Printer:
+    ''' Produces printer which uses standard Python 'print'. '''
+    return __.funct.partial( _simple_print, target = target )
 
 
 @_validate_arguments
@@ -82,29 +161,38 @@ def produce_truck(
     flavors: __.ProduceTruckFlavorsArgument = __.absent,
     active_flavors: __.ProduceTruckActiveFlavorsArgument = __.absent,
     trace_levels: __.ProduceTruckTraceLevelsArgument = __.absent,
-    # TODO? Choice of truck type (console formatter | console printer ).
+    mode: ProduceTruckModeArgument = Modes.Formatter,
     stderr: ProduceTruckStderrArgument = True,
 ) -> __.Truck:
     ''' Produces icecream truck which integrates with Rich. '''
-    console = _Console( stderr = stderr )
-    gc_nomargs = { }
-    if not __.is_absent( flavors ): gc_nomargs[ 'flavors' ] = flavors
-    generalcfg = __.VehicleConfiguration(
-        formatter_factory = __.funct.partial(
-            _produce_console_formatter, console ),
-        **gc_nomargs ) # pyright: ignore
-    target = __.sys.stderr if stderr else __.sys.stdout
-    if not isinstance( target, __.io.TextIOBase ):
-        raise ConsoleTextIoInvalidity( target )
-    nomargs: dict[ str, __.typx.Any ] = dict(
+    match mode:
+        case Modes.Formatter: factory = _produce_formatter_truck
+        case Modes.Printer: factory = _produce_printer_truck
+    return factory(
+        flavors = flavors,
         active_flavors = active_flavors,
-        generalcfg = generalcfg,
-        printer_factory = __.funct.partial( _produce_simple_printer, target ),
-        trace_levels = trace_levels )
-    return __.produce_truck( **nomargs )
+        trace_levels = trace_levels,
+        stderr = stderr )
 
 
-# TODO: 'register_module' which adds 'pretty_repr' as formatter.
+@_validate_arguments
+def register_module(
+    name: __.RegisterModuleNameArgument = __.absent,
+    flavors: __.ProduceTruckFlavorsArgument = __.absent,
+    include_context: __.RegisterModuleIncludeContextArgument = __.absent,
+    prefix_emitter: __.RegisterModulePrefixEmitterArgument = __.absent,
+) -> None:
+    ''' Registers module with Rich prettier to format arguments.
+
+        Intended for library developers to configure debugging flavors without
+        overriding anything set by the application or other libraries.
+    '''
+    __.register_module(
+        name = name,
+        flavors = flavors,
+        formatter_factory = produce_pretty_formatter,
+        include_context = include_context,
+        prefix_emitter = prefix_emitter )
 
 
 def _console_format( console: _Console, value: __.typx.Any ) -> str:
@@ -113,31 +201,63 @@ def _console_format( console: _Console, value: __.typx.Any ) -> str:
     return capture.get( )
 
 
-def _produce_console_formatter(
-    console: _Console,
-    # pylint: disable=unused-argument
-    control: __.FormatterControl,
-    mname: str,
-    flavor: int | str,
-    # pylint: enable=unused-argument
-) -> __.Formatter:
-    return __.funct.partial( _console_format, console )
+def _console_print( console: _Console, text: str ) -> None:
+    with _windows_replace_ansi_sgr( ):
+        # console.print( text, markup = False )
+        console.print( text )
+
+
+def _produce_formatter_truck(
+    flavors: __.ProduceTruckFlavorsArgument = __.absent,
+    active_flavors: __.ProduceTruckActiveFlavorsArgument = __.absent,
+    trace_levels: __.ProduceTruckTraceLevelsArgument = __.absent,
+    stderr: ProduceTruckStderrArgument = True,
+) -> __.Truck:
+    console = _Console( stderr = stderr )
+    gc_nomargs = { }
+    if not __.is_absent( flavors ): gc_nomargs[ 'flavors' ] = flavors
+    generalcfg = __.VehicleConfiguration(
+        formatter_factory = __.funct.partial(
+            produce_console_formatter, console ),
+        **gc_nomargs ) # pyright: ignore
+    target = __.sys.stderr if stderr else __.sys.stdout
+    if not isinstance( target, __.io.TextIOBase ):
+        raise ConsoleTextIoInvalidity( target )
+    nomargs: dict[ str, __.typx.Any ] = dict(
+        active_flavors = active_flavors,
+        generalcfg = generalcfg,
+        printer_factory = __.funct.partial( produce_simple_printer, target ),
+        trace_levels = trace_levels )
+    return __.produce_truck( **nomargs )
+
+
+def _produce_printer_truck(
+    flavors: __.ProduceTruckFlavorsArgument = __.absent,
+    active_flavors: __.ProduceTruckActiveFlavorsArgument = __.absent,
+    trace_levels: __.ProduceTruckTraceLevelsArgument = __.absent,
+    stderr: ProduceTruckStderrArgument = True,
+) -> __.Truck:
+    console = _Console( stderr = stderr )
+    gc_nomargs = { }
+    if not __.is_absent( flavors ): gc_nomargs[ 'flavors' ] = flavors
+    generalcfg = __.VehicleConfiguration(
+        formatter_factory = produce_pretty_formatter,
+        **gc_nomargs ) # pyright: ignore
+    target = __.sys.stderr if stderr else __.sys.stdout
+    if not isinstance( target, __.io.TextIOBase ): # pragma: no cover
+        raise ConsoleTextIoInvalidity( target )
+    nomargs: dict[ str, __.typx.Any ] = dict(
+        active_flavors = active_flavors,
+        generalcfg = generalcfg,
+        printer_factory = __.funct.partial( produce_console_printer, console ),
+        trace_levels = trace_levels )
+    return __.produce_truck( **nomargs )
 
 
 # def _produce_prefix( console: _Console, mname: str, flavor: _Flavor ) -> str:
 #     # TODO: Detect if terminal supports 256 colors or true color.
 #     #       Make spectrum of hues for trace depths, if so.
 #     return _icecream.DEFAULT_PREFIX
-
-
-def _produce_simple_printer(
-    target: __.io.TextIOBase,
-    # pylint: disable=unused-argument
-    mname: str,
-    flavor: __.Flavor,
-    # pylint: enable=unused-argument
-) -> __.Printer:
-    return __.funct.partial( _simple_print, target = target )
 
 
 def _simple_print( text: str, target: __.io.TextIOBase ) -> None:

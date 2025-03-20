@@ -30,9 +30,3 @@ from .. import exceptions
 from ..__ import *
 from ..configuration import *
 from ..vehicles import *
-
-
-ProduceTruckFlavorsArgument: typx.TypeAlias = typx.Annotated[
-    Absential[ FlavorsRegistry ],
-    typx.Doc( ''' Registry of flavor identifiers to configurations. ''' ),
-]
