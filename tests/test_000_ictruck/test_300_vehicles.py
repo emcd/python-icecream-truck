@@ -32,12 +32,6 @@ from . import PACKAGE_NAME, cache_import_module
 
 
 @pytest.fixture( scope = 'session' )
-def base( ):
-    ''' Provides internals base module. '''
-    return cache_import_module( f"{PACKAGE_NAME}.__" )
-
-
-@pytest.fixture( scope = 'session' )
 def configuration( ):
     ''' Provides configuration module. '''
     return cache_import_module( f"{PACKAGE_NAME}.configuration" )
@@ -344,14 +338,12 @@ def test_550_install_with_generalcfg(
     assert generalcfg.prefix_emitter == 'foo:: '
 
 
-def test_600_register_module_basic(
-    vehicles, base, configuration, clean_builtins
-):
+def test_600_register_module_basic( vehicles, configuration, clean_builtins ):
     ''' Register module with explicit name and arguments. '''
     truck = vehicles.install( )
-    flavors = base.AccretiveDictionary( {
+    flavors = {
         'test':
-            configuration.FlavorConfiguration( prefix_emitter = 'Test| ' ) } )
+            configuration.FlavorConfiguration( prefix_emitter = 'Test| ' ) }
     vehicles.register_module( name = 'test_module', flavors = flavors )
     assert 'test_module' in truck.modulecfgs
     assert (
@@ -359,17 +351,16 @@ def test_600_register_module_basic(
         .flavors[ 'test' ].prefix_emitter == 'Test| ' )
 
 
-def test_601_register_module_multiple( # pylint: disable=too-many-arguments
-    vehicles, base, configuration, clean_builtins, simple_output, monkeypatch
+def test_601_register_module_multiple(
+    vehicles, configuration, clean_builtins, simple_output, monkeypatch
 ):
     ''' Register multiple modules with varying configurations. '''
     monkeypatch.setattr( 'sys.stderr', simple_output )
     truck = vehicles.install(
         trace_levels = { __package__: 0 }, active_flavors = { 'foo' } )
     vehicles.register_module( name = __package__ )  # Default config
-    flavors = base.AccretiveDictionary( {
-        'foo':
-            configuration.FlavorConfiguration( prefix_emitter = 'foo:: ' ) } )
+    flavors = {
+        'foo': configuration.FlavorConfiguration( prefix_emitter = 'foo:: ' ) }
     vehicles.register_module( name = __name__, flavors = flavors )
     truck( 0 )( 'test' )
     truck( 'foo' )( 'test' )
@@ -407,14 +398,13 @@ def test_630_register_module_absent_args(
         truck.modulecfgs[ __name__ ], configuration.ModuleConfiguration )
 
 
-def test_640_register_module_full_config( # pylint: disable=too-many-arguments,too-many-locals
-    vehicles, base, configuration, clean_builtins, simple_output, monkeypatch
+def test_640_register_module_full_config( # pylint: disable=too-many-locals
+    vehicles, configuration, clean_builtins, simple_output, monkeypatch
 ):
     ''' Register module with all arguments configured. '''
     monkeypatch.setattr( 'sys.stderr', simple_output )
     truck = vehicles.install( trace_levels = 0, active_flavors = { 'info' } )
-    flavors = base.AccretiveDictionary( {
-        'info': configuration.FlavorConfiguration( ) } )
+    flavors = { 'info': configuration.FlavorConfiguration( ) }
     def custom_formatter( ctrl, mname, flavor ):
         return lambda x: f"Custom: {x}"
     vehicles.register_module(
@@ -431,11 +421,11 @@ def test_640_register_module_full_config( # pylint: disable=too-many-arguments,t
 
 
 def test_650_register_module_absent_config(
-    vehicles, base, configuration, clean_builtins
+    vehicles, configuration, clean_builtins
 ):
     ''' Register module with absent configuration uses default. '''
     truck = vehicles.install( )
-    truck.register_module( configuration = base.absent )
+    truck.register_module( )
     assert __name__ in truck.modulecfgs
     config = truck.modulecfgs[ __name__ ]
     assert isinstance( config, configuration.ModuleConfiguration )

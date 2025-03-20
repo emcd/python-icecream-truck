@@ -209,15 +209,14 @@ def test_202_install_truck_trace_levels(
 
 
 def test_300_register_module( # pylint: disable=too-many-arguments
-    recipes, base, configuration, vehicles,
+    recipes, configuration, vehicles,
     simple_output, clean_builtins, monkeypatch,
 ):
     monkeypatch.setattr( sys, 'stderr', simple_output )
     truck = recipes.install( trace_levels = 0, active_flavors = { 'debug' } )
     recipes.register_module(
         prefix_emitter = 'Rich| ',
-        flavors = base.AccretiveDictionary( {
-            'debug': configuration.FlavorConfiguration( ) } ) )
+        flavors = { 'debug': configuration.FlavorConfiguration( ) } )
     debugger = truck( 'debug' )
     debugger( { 'key': 'value' } )
     output = simple_output.getvalue( )

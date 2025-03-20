@@ -170,7 +170,10 @@ class VehicleConfiguration(
 
 Flavor: __.typx.TypeAlias = int | str
 FlavorsRegistry: __.typx.TypeAlias = (
+    # TODO: Immutable dictionary.
     __.AccretiveDictionary[ Flavor, FlavorConfiguration ] )
+FlavorsRegistryLiberal: __.typx.TypeAlias = (
+    __.cabc.Mapping[ Flavor, FlavorConfiguration ] )
 Formatter: __.typx.TypeAlias = __.typx.Callable[ [ __.typx.Any ], str ]
 FormatterFactory: __.typx.TypeAlias = (
     __.typx.Callable[ [ FormatterControl, str, Flavor ], Formatter ] )

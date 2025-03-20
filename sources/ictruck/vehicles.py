@@ -162,14 +162,20 @@ class Truck(
         self.modulecfgs[ name ] = configuration # pylint: disable=unsupported-assignment-operation
 
 
-ActiveFlavors: __.typx.TypeAlias = __.cabc.Set[ _cfg.Flavor ]
+ActiveFlavors: __.typx.TypeAlias = frozenset[ _cfg.Flavor ]
+ActiveFlavorsLiberal: __.typx.TypeAlias = __.cabc.Set[ _cfg.Flavor ]
 ActiveFlavorsRegistry: __.typx.TypeAlias = (
-    __.cabc.Mapping[ str | None, ActiveFlavors ] )
+    __.ImmutableDictionary[ str | None, ActiveFlavors ] )
+ActiveFlavorsRegistryLiberal: __.typx.TypeAlias = (
+    __.cabc.Mapping[ str | None, ActiveFlavorsLiberal ] )
 Printer: __.typx.TypeAlias = __.cabc.Callable[ [ str ], None ]
 PrinterFactory: __.typx.TypeAlias = (
     __.cabc.Callable[ [ str, _cfg.Flavor ], Printer ] )
 PrinterFactoryUnion: __.typx.TypeAlias = __.io.TextIOBase | PrinterFactory
-TraceLevelsRegistry: __.typx.TypeAlias = __.cabc.Mapping[ str | None, int ]
+TraceLevelsRegistry: __.typx.TypeAlias = (
+    __.ImmutableDictionary[ str | None, int ] )
+TraceLevelsRegistryLiberal: __.typx.TypeAlias = (
+    __.cabc.Mapping[ str | None, int ] )
 
 InstallAliasArgument: __.typx.TypeAlias = __.typx.Annotated[
     str,
@@ -177,7 +183,7 @@ InstallAliasArgument: __.typx.TypeAlias = __.typx.Annotated[
         ''' Alias under which the truck is installed in builtins. ''' ),
 ]
 ProduceTruckActiveFlavorsArgument: __.typx.TypeAlias = __.typx.Annotated[
-    __.Absential[ ActiveFlavors | ActiveFlavorsRegistry ],
+    __.Absential[ ActiveFlavorsLiberal | ActiveFlavorsRegistryLiberal ],
     __.typx.Doc(
         ''' Flavors to activate.
 
@@ -188,7 +194,7 @@ ProduceTruckActiveFlavorsArgument: __.typx.TypeAlias = __.typx.Annotated[
         ''' ),
 ]
 ProduceTruckFlavorsArgument: __.typx.TypeAlias = __.typx.Annotated[
-    __.Absential[ _cfg.FlavorsRegistry ],
+    __.Absential[ _cfg.FlavorsRegistryLiberal ],
     __.typx.Doc( ''' Registry of flavor identifiers to configurations. ''' ),
 ]
 ProduceTruckGeneralcfgArgument: __.typx.TypeAlias = __.typx.Annotated[
@@ -214,7 +220,7 @@ ProduceTruckPrinterFactoryArgument: __.typx.TypeAlias = __.typx.Annotated[
         ''' ),
 ]
 ProduceTruckTraceLevelsArgument: __.typx.TypeAlias = __.typx.Annotated[
-    __.Absential[ int | TraceLevelsRegistry ],
+    __.Absential[ int | TraceLevelsRegistryLiberal ],
     __.typx.Doc(
         ''' Maximum trace depths.
 
@@ -297,10 +303,10 @@ def produce_truck(
     if not __.is_absent( active_flavors ):
         if isinstance( active_flavors, __.cabc.Set ):
             nomargs[ 'active_flavors' ] = __.ImmutableDictionary(
-                { None: set( active_flavors ) } )
+                { None: frozenset( active_flavors ) } )
         else:
             nomargs[ 'active_flavors' ] = __.ImmutableDictionary( {
-                mname: set( flavors )
+                mname: frozenset( flavors )
                 for mname, flavors in active_flavors.items( ) } )
     if not __.is_absent( trace_levels ):
         if isinstance( trace_levels, int ):
@@ -334,7 +340,8 @@ def register_module(
     else: truck = __builtins__[ builtins_alias_default ]
     nomargs: dict[ str, __.typx.Any ] = { }
     if not __.is_absent( flavors ):
-        nomargs[ 'flavors' ] = flavors
+        # TODO: Immutable dictionary.
+        nomargs[ 'flavors' ] = __.AccretiveDictionary( flavors )
     if not __.is_absent( formatter_factory ):
         nomargs[ 'formatter_factory' ] = formatter_factory
     if not __.is_absent( include_context ):
@@ -346,18 +353,17 @@ def register_module(
 
 
 def _calculate_effective_flavors(
-    flavors: __.cabc.Mapping[ str | None, ActiveFlavors ], mname: str
+    flavors: ActiveFlavorsRegistry, mname: str
 ) -> ActiveFlavors:
-    result = set( flavors.get( None, set( ) ) )
+    result = set( flavors.get( None, frozenset( ) ) )
     for mname_ in _iterate_module_name_ancestry( mname ):
         if mname_ in flavors:
             result |= set( flavors[ mname_ ] )
-    return result
+    return frozenset( result )
 
 
 def _calculate_effective_trace_level(
-    levels: __.cabc.Mapping[ str | None, int ],
-    mname: str,
+    levels: TraceLevelsRegistry, mname: str
 ) -> int:
     result = levels.get( None, -1 )
     for mname_ in _iterate_module_name_ancestry( mname ):
