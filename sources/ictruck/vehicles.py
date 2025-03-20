@@ -48,9 +48,7 @@ builtins_alias_default: __.typx.Annotated[
 ] = 'ictr'
 
 
-class Truck(
-    metaclass = __.ImmutableDataclass, # decorators = ( __.immutable, )
-):
+class Truck( metaclass = __.ImmutableCompleteDataclass ):
     ''' Vends flavors of Icecream debugger. '''
 
     # pylint: disable=invalid-field-call

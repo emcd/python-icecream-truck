@@ -36,9 +36,7 @@ def _produce_default_flavors( ) -> __.AccretiveDictionary[
             prefix_emitter = f"TRACE{i}| " ) for i in range( 10 ) } )
 
 
-class FormatterControl(
-    metaclass = __.ImmutableDataclass, # decorators = ( __.immutable, )
-):
+class FormatterControl( metaclass = __.ImmutableCompleteDataclass ):
     ''' Contextual data for formatter and prefix factories. '''
 
     columns_count_effective: __.typx.Annotated[
@@ -52,9 +50,7 @@ class FormatterControl(
     ] = None
 
 
-class FlavorConfiguration(
-    metaclass = __.ImmutableDataclass, # decorators = ( __.immutable, )
-):
+class FlavorConfiguration( metaclass = __.ImmutableCompleteDataclass ):
     ''' Per-flavor configuration. '''
 
     formatter_factory: __.typx.Annotated[
@@ -89,9 +85,7 @@ class FlavorConfiguration(
     ] = None
 
 
-class ModuleConfiguration(
-    metaclass = __.ImmutableDataclass, # decorators = ( __.immutable, )
-):
+class ModuleConfiguration( metaclass = __.ImmutableCompleteDataclass ):
     ''' Per-module or per-package configuration. '''
 
     # pylint: disable=invalid-field-call
@@ -133,9 +127,7 @@ class ModuleConfiguration(
     # pylint: enable=invalid-field-call
 
 
-class VehicleConfiguration(
-    metaclass = __.ImmutableDataclass, # decorators = ( __.immutable, )
-):
+class VehicleConfiguration( metaclass = __.ImmutableCompleteDataclass ):
     ''' Per-vehicle configuration. '''
 
     # pylint: disable=invalid-field-call

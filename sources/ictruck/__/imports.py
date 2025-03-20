@@ -47,7 +47,7 @@ from absence import Absential, absent, is_absent
 from accretive.qaliases import AccretiveDictionary
 from frigid.qaliases import (
     ImmutableClass,
-    ImmutableDataclass,
+    ImmutableCompleteDataclass,
     ImmutableDictionary,
     immutable,
     reclassify_modules_as_immutable,
