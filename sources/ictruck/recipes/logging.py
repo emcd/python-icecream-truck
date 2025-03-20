@@ -34,10 +34,17 @@ _validate_arguments = (
         errorclass = __.exceptions.ArgumentClassInvalidity ) )
 
 
+InstallAdditionalAliasesArgument: __.typx.TypeAlias = __.typx.Annotated[
+    __.Absential[ __.cabc.Mapping[ str, str ] ],
+    __.typx.Doc(
+        ''' Mapping of builtins attribute names to flavors. ''' ),
+]
+
+
 @_validate_arguments
 def install(
     alias: __.InstallAliasArgument = __.builtins_alias_default,
-    # TODO? Aliases map for per-level installations.
+    additional_aliases: InstallAdditionalAliasesArgument = __.absent,
 ) -> __.Truck:
     ''' Installs configured truck into builtins.
 
@@ -47,6 +54,10 @@ def install(
     truck = produce_truck( )
     __.install_builtin_safely(
         alias, truck, __.exceptions.AttributeNondisplacement )
+    if __.is_absent( additional_aliases ): additional_aliases = { }
+    for falias, flavor in additional_aliases.items( ):
+        __.install_builtin_safely(
+            falias, truck( flavor ), __.exceptions.AttributeNondisplacement )
     return truck
 
 

@@ -119,11 +119,19 @@ def test_200_install_truck_default(
         for r in log_capture.records )
 
 
-def test_201_install_truck_custom_alias(
-    recipes, vehicles, log_capture, clean_builtins
-):
+def test_201_install_truck_custom_alias( recipes, clean_builtins ):
     ''' Installation supports custom alias. '''
     alias = 'custom_truck'
     recipes.install( alias = alias )
     import builtins
     assert alias in builtins.__dict__
+
+
+def test_202_install_debuggers( recipes, clean_builtins ):
+    ''' Installation of aliased debuggers. '''
+    aliases = dict(
+        icd = 'debug', ici = 'info', icw = 'warning',
+        ice = 'error', icc = 'critical' )
+    recipes.install( additional_aliases = aliases )
+    import builtins
+    for alias in aliases: assert alias in builtins.__dict__
