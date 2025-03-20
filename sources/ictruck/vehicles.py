@@ -163,7 +163,8 @@ class Truck(
 
 
 ActiveFlavors: __.typx.TypeAlias = frozenset[ _cfg.Flavor ]
-ActiveFlavorsLiberal: __.typx.TypeAlias = __.cabc.Set[ _cfg.Flavor ]
+ActiveFlavorsLiberal: __.typx.TypeAlias = (
+    __.cabc.Sequence[ _cfg.Flavor ] | __.cabc.Set[ _cfg.Flavor ] )
 ActiveFlavorsRegistry: __.typx.TypeAlias = (
     __.ImmutableDictionary[ str | None, ActiveFlavors ] )
 ActiveFlavorsRegistryLiberal: __.typx.TypeAlias = (
@@ -187,8 +188,8 @@ ProduceTruckActiveFlavorsArgument: __.typx.TypeAlias = __.typx.Annotated[
     __.typx.Doc(
         ''' Flavors to activate.
 
-            Can be a set, which applies globally across all registered
-            modules. Or, can be a mapping of module names to sets.
+            Can be collection, which applies globally across all registered
+            modules. Or, can be mapping of module names to sets.
 
             Module-specific entries merge with global entries.
         ''' ),
@@ -301,7 +302,7 @@ def produce_truck(
     if not __.is_absent( printer_factory ):
         nomargs[ 'printer_factory' ] = printer_factory
     if not __.is_absent( active_flavors ):
-        if isinstance( active_flavors, __.cabc.Set ):
+        if isinstance( active_flavors, ( __.cabc.Sequence,  __.cabc.Set ) ):
             nomargs[ 'active_flavors' ] = __.ImmutableDictionary(
                 { None: frozenset( active_flavors ) } )
         else:
