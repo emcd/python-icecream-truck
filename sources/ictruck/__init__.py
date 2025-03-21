@@ -32,7 +32,7 @@ from .exceptions import *
 from .vehicles import *
 
 
-__version__ = '1.0a0'
+__version__ = '1.0a1'
 
 
 # TODO: Also reclassify package modules as concealed.
