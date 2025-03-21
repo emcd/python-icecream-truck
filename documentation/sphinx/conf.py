@@ -83,6 +83,8 @@ nitpick_ignore = [
     ( 'py:class', "accretive.dictionaries.Annotated" ),
     ( 'py:class', "accretive.dictionaries.Dictionary" ),
     ( 'py:class', "collections.abc.Annotated" ),
+    ( 'py:class', "frigid.dictionaries.Annotated" ),
+    ( 'py:class', "frigid.dictionaries.Dictionary" ),
     ( 'py:class', "ictruck.configuration.Annotated" ),
     ( 'py:class', "types.Annotated" ),
     ( 'py:class', "typing_extensions.Any" ),

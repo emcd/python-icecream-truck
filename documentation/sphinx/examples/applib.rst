@@ -17,33 +17,47 @@
    +--------------------------------------------------------------------------+
 
 
-Simple Cases
+Library Coordination
 ===============================================================================
 
-Adjustable Trace Level via Environment Variable
+Application and Module with Custom Flavors
 -------------------------------------------------------------------------------
 
-By default, ``icecream-truck`` does not produce any output. You, as an
-application developer, will need to determine how much output you want from it
-and whether you will let your users adjust that knob. Having a default trace
-depth, which can be overridden by environment variable is one simple way to
-achieve this.
+(Example courtesy of Anthropic claude-3-7-sonnet.)
 
-.. literalinclude:: ../../../examples/simple/__main__.py
+An example application which uses a library module for some analytics:
+
+.. literalinclude:: ../../../examples/applib/__main__.py
+   :language: python
+
+And the library module for analytics:
+
+.. literalinclude:: ../../../examples/applib/analytics.py
    :language: python
 
 Running this will result in::
 
-    TRACE0| 'Icecream tracing active.'
-    TRACE2| operator: <built-in function mul>
-    TRACE1| answer: 42
-
-Running this with ``ICTRUCK_TRACE_LEVELS=3`` in the environment will result
-in::
-
-    TRACE0| 'Icecream tracing active.'
-    TRACE2| operator: <built-in function mul>
-    TRACE3| datum: 2
-    TRACE3| datum: 3
-    TRACE3| datum: 7
-    TRACE1| answer: 42
+    TRACE0| 'Application running.'
+    TRACE0| 'Calculating metrics...'
+    ANALYTICS INFO| 'Calculating metrics...'
+    ANALYTICS INFO| 'Metrics calculation complete.'
+    ANALYTICS PERF| count: 10
+    TRACE1| metrics: {'average': 11.6,
+                      'count': 10,
+                      'maximum': 14,
+                      'minimum': 10,
+                      'std_dev': 1.3564659966250536,
+                      'total': 116,
+                      'variance': 1.8399999999999999}
+    TRACE0| 'Detecting anomalies...'
+    ANALYTICS INFO| f"Detecting anomalies with threshold {threshold}.": 'Detecting anomalies with threshold 2.0.'
+    ANALYTICS INFO| 'Calculating metrics...'
+    ANALYTICS INFO| 'Metrics calculation complete.'
+    ANALYTICS PERF| count: 10
+    ANALYTICS PERF| len( anomalies ): 1
+    TRACE1| summary: 'Found 1 anomalies.'
+    TRACE2| position: 5, value: 40, z_score: 2.975954728492207
+    TRACE0| 'Calculating metrics on empty dataset...'
+    ANALYTICS INFO| 'Calculating metrics...'
+    ANALYTICS ERROR| 'Empty dataset provided.'
+    TRACE0| 'Application finished'

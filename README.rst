@@ -134,9 +134,9 @@ E.g., integrate ``icecream``-based introspection and formatting with the
 .. code-block:: python
 
     import logging
-    from ictruck import produce_logging_truck
+    from ictruck.recipes.logging import produce_truck
     logging.basicConfig( level = logging.INFO )
-    truck = produce_logging_truck( )
+    truck = produce_truck( )
     admonition = "Careful now!"
     answer = 42
     truck( 'warning' )( admonition )  # Logs: WARNING:__main__:ic| admonition: 'Careful now!'

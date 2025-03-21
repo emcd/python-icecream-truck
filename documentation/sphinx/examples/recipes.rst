@@ -20,50 +20,38 @@
 Recipes
 ===============================================================================
 
-The ``recipes`` module provides pre-configured ``Truck`` instances integrated
-with Python’s ``logging`` module, using standard logging flavors.
+The ``recipes`` package provides convenience modules for various tasks like
+integration with Python standard library logging or use of the ``rich`` package
+for formatting or printing.
 
 Logging Integration
 -------------------------------------------------------------------------------
 
-Start with ``produce_logging_truck`` for logging with predefined flavors
-(``debug``, ``info``, ``warning``, ``error``, ``critical``):
+(Example courtesy of xAI grok-3.)
 
-.. code-block:: python
+.. literalinclude:: ../../../examples/logging/__main__.py
+   :language: python
 
-    import logging
-    from ictruck.recipes import produce_logging_truck
-    logging.basicConfig( level = logging.INFO )
-    produce_logging_truck( )  # Installs as ictr
-    task_id = 42
-    ictr( 'info' )( task_id )
-    # Output: INFO:__main__:task_id: 42
-    value = 0
-    ictr( 'warning' )( value )
-    # Output: WARNING:__main__:value: 0
-    ictr( 'debug' )( value )  # No output; below logging.INFO
 
-Flavors map directly to `logging` levels—set ``install = False`` for a local
-instance.
+Running this will result in the following::
 
-Flavor-to-Builtins Mapping
+    INFO: ic| 'Scanning', files: ['data1.txt', 'data2.txt']
+    WARNING: ic| 'Missing', file: 'data1.txt'
+    WARNING: ic| 'Missing', file: 'data2.txt'
+
+
+``rich`` Integration
 -------------------------------------------------------------------------------
 
-Map logging flavors to shorthand names:
+(Example courtesy of xAI grok-3.)
 
-.. code-block:: python
+.. literalinclude:: ../../../examples/rich/__main__.py
+   :language: python
 
-    from ictruck.recipes import produce_logging_truck
-    import builtins
-    truck = produce_logging_truck( install = False )
-    flavors = { 'debug': 'icd', 'info': 'ici', 'warning': 'icw' }
-    for flavor, name in flavors.items( ):
-        setattr( builtins, name, truck( flavor ) )
-    step = 1
-    icd( step )
-    # Output: DEBUG:__main__:step: 1
-    status = 'OK'
-    ici( status )
-    # Output: INFO:__main__:status: 'OK'
+Running this will result in the following (or something similar, depending on
+your terminal colors and width):
 
-This provides concise aliases for logging-based debugging.
+.. image:: recipe-rich-termcap.png
+   :alt: Rich Recipe Terminal Screen Capture
+   :width: 800
+   :align: center
