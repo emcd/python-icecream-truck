@@ -17,7 +17,7 @@
    +--------------------------------------------------------------------------+
 
 
-Vehicles
+Basics
 ===============================================================================
 
 The ``vehicles`` module provides the ``Truck`` class and utilities for
@@ -45,17 +45,19 @@ debugging:
 This mirrors ``icecream``’s ``ic``—variable names are inferred automatically,
 controlled by ``trace_levels`` (0-9) with default ``TRACE{i}|`` prefixes.
 
+Custom Flavors
+-------------------------------------------------------------------------------
+
 Add custom flavors for subsystem-specific debugging:
 
 .. code-block:: python
 
-    from ictruck import VehicleConfiguration, FlavorConfiguration
+    from ictruck import FlavorConfiguration
     flavors = {
-        'io': FlavorConfiguration( prefix = 'IO: ' ),
-        'calc': FlavorConfiguration( prefix = 'CALC: ' )
+        'io': FlavorConfiguration( prefix_emitter = 'IO: ' ),
+        'calc': FlavorConfiguration( prefix_emitter = 'CALC: ' )
     }
-    config = VehicleConfiguration( flavors = flavors )
-    install( generalcfg = config, active_flavors = { 'io', 'calc' } )
+    install( flavors = flavors, active_flavors = { 'io', 'calc' } )
     path = '/tmp/data'
     ictr( 'io' )( path )
     # Output: IO: path: '/tmp/data'
@@ -63,36 +65,38 @@ Add custom flavors for subsystem-specific debugging:
     ictr( 'calc' )( result )
     # Output: CALC: result: 15
 
-This is perfect for applications needing a global, tailored debugger.
-
 Module-Specific Configuration
 -------------------------------------------------------------------------------
 
-Library developers can isolate debug output with ``register_module``:
+Library developers can isolate debug output with ``register_module``.
+
+In application code:
 
 .. code-block:: python
 
-    # In mylib.py
-    from ictruck import Truck, ModuleConfiguration
-    truck = Truck( trace_levels = 1 )  # TRACE0 and TRACE1
-    config = ModuleConfiguration( prefix = 'LIB: ' )
-    truck.register_module( 'mylib', configuration = config )
+    # In application code
+    from ictruck import install
+    install( trace_levels = 1 )  # TRACE0 and TRACE1
+
+In library code:
+
+.. code-block:: python
+
+    from ictruck import register_module
+    register_module( prefix_emitter = 'LIB: ' )
     state = 'ready'
-    truck( 0 )( state )  # Module name inferred as 'mylib'
+    ictr( 0 )( state )
     # Output: LIB: state: 'ready'
-    truck( 2 )( state )  # Above trace level, no output
+    ictr( 2 )( state )  # Below trace depth, no output
     # In app code
     status = 'OK'
-    truck( 1 )( status )  # Outside mylib, uses default config
-    # Output: TRACE1| status: 'OK'
 
-This keeps library debugging separate, with variable inference intact, avoiding
-global namespace conflicts.
+This keeps library debugging separate, avoiding global namespace conflicts.
 
 Direct Truck Usage
 -------------------------------------------------------------------------------
 
-For local debugging without ``builtins``:
+For debugging without installation into ``builtins``:
 
 .. code-block:: python
 
@@ -102,7 +106,4 @@ For local debugging without ``builtins``:
     count = 5
     truck( 0 )( count )
     # Output: TRACE0| count: 5
-    truck( 2 )( count )  # Above trace level, no output
-
-Use this for temporary debugging, leveraging variable name inference locally.
-Note: Module name inference assumes a real module context (e.g., a `.py` file).
+    truck( 2 )( count )  # Below trace depth, no output

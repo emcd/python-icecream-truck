@@ -24,5 +24,8 @@ Examples
 .. toctree::
    :maxdepth: 2
 
-   vehicles
+   introduction
+   simple
+   applib
+   environments
    recipes

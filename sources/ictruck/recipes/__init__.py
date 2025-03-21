@@ -18,39 +18,7 @@
 #============================================================================#
 
 
-''' Factories which produce Icecream debugger output functions. '''
+''' Useful icecream recipes which our trucks can vend. '''
 
 
 from __future__ import annotations
-
-from . import __
-from . import configuration as _configuration
-from . import vehicles as _vehicles
-
-
-def produce_logging_truck( install = True ) -> _vehicles.Truck:
-    ''' Produces icecream truck that is integrated with 'logging' module. '''
-    active_flavors = { None: frozenset( {
-        'debug', 'info', 'warning', 'error', 'critical' } ) }
-    flavors: __.AccretiveDictionary[ int | str, _configuration.Flavor ] = (
-        __.AccretiveDictionary(
-            {   name: _configuration.Flavor( )
-                for name in active_flavors[ None ] } ) )
-    generalcfg = _configuration.Vehicle( flavors = flavors )
-    nomargs = dict(
-        active_flavors = active_flavors,
-        generalcfg = generalcfg,
-        printer_factory = _logger_factory )
-    if install: return _vehicles.install( **nomargs )
-    return _vehicles.Truck( **nomargs ) # pyright: ignore
-
-
-def _logger_factory(
-    mname: str, flavor: int | str
-) -> __.cabc.Callable[ [ str ], None ]:
-    import logging
-    logger = logging.getLogger( mname )
-    level = (
-        getattr( logging, flavor.upper( ) ) if isinstance( flavor, str )
-        else logging.DEBUG )
-    return lambda x: logger.log( level, x )

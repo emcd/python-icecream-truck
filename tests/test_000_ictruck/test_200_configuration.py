@@ -21,87 +21,87 @@
 ''' Tests for configuration module. '''
 
 
+import icecream
 import pytest
 
 from . import PACKAGE_NAME, cache_import_module
 
 
+CLASS_NAMES = (
+    'FlavorConfiguration', 'ModuleConfiguration', 'VehicleConfiguration' )
+
+
 @pytest.fixture
-def configuration( ):
+def configuration( scope = 'session' ): # pylint: disable=unused-argument
     ''' Provides configuration module. '''
     return cache_import_module( f"{PACKAGE_NAME}.configuration" )
 
 
 def test_000_flavor_defaults( configuration ):
-    ''' Flavor has expected defaults. '''
-    flavor = configuration.Flavor( )
-    assert flavor.formatter is None
+    ''' FlavorConfiguration has expected defaults. '''
+    flavor = configuration.FlavorConfiguration( )
+    assert flavor.formatter_factory is None
     assert flavor.include_context is None
-    assert flavor.prefix is None
+    assert flavor.prefix_emitter is None
 
 
-def test_010_module_defaults( configuration ):
-    ''' Module has expected defaults. '''
-    module = configuration.Module( )
-    assert module.formatter is None
+def test_001_module_defaults( configuration ):
+    ''' ModuleConfiguration has expected defaults. '''
+    module = configuration.ModuleConfiguration( )
+    assert module.formatter_factory is None
     assert module.include_context is None
-    assert module.prefix is None
+    assert module.prefix_emitter is None
     assert len( module.flavors ) == 0
 
 
-def test_020_vehicle_defaults( configuration ):
-    ''' Vehicle has expected defaults. '''
-    vehicle = configuration.Vehicle( )
-    assert vehicle.formatter is not None
+def test_002_vehicle_defaults( configuration ):
+    ''' VehicleConfiguration has expected defaults. '''
+    vehicle = configuration.VehicleConfiguration( )
+    assert callable( vehicle.formatter_factory )
     assert vehicle.include_context is False
-    assert vehicle.prefix is not None
+    assert isinstance( vehicle.prefix_emitter, str )
+    assert vehicle.prefix_emitter == icecream.DEFAULT_PREFIX
     assert len( vehicle.flavors ) == 10  # Default trace levels 0-9
 
 
+@pytest.mark.parametrize( 'class_name', CLASS_NAMES )
+def test_010_formatter_factory( configuration, class_name ):
+    ''' Argument formatter_factory can be customized. '''
+    # pylint: disable=unused-argument
+    def custom_formatter( ctrl, mname, flavor ):
+        return lambda arg: f'Custom: {arg}'
+    # pylint: enable=unused-argument
+    obj = getattr( configuration, class_name )(
+        formatter_factory = custom_formatter )
+    control = configuration.FormatterControl( )
+    formatter = obj.formatter_factory( control, 'test', 0 )
+    assert formatter( 'value' ) == 'Custom: value'
+
+
+@pytest.mark.parametrize( 'class_name', CLASS_NAMES )
 @pytest.mark.parametrize(
-    'prefix, expected',
-    [ ( 'Custom| ', 'Custom| ' ) ],
+    'prefix_emitter, expected',
+    [
+        ( 'Custom| ', 'Custom| ' ),
+        ( lambda ctrl, mname, flavor: 'Dynamic| ', 'Dynamic| ' ),
+    ],
 )
-def test_100_vehicle_prefix( prefix, expected, configuration ) -> None:
-    ''' Vehicle prefix is None if not provided, custom if specified. '''
-    vehicle = configuration.Vehicle( prefix = prefix )
-    assert vehicle.prefix == expected, (
-        f"Expected prefix '{expected}', got '{vehicle.prefix}'" )
+def test_020_prefix_emitter(
+    configuration, class_name, prefix_emitter, expected
+):
+    ''' Argument prefix_emitter is string or callable. '''
+    vehicle = getattr( configuration, class_name )(
+        prefix_emitter = prefix_emitter )
+    if isinstance( prefix_emitter, str ):
+        assert vehicle.prefix_emitter == expected
+    else:
+        assert vehicle.prefix_emitter(
+            configuration.FormatterControl( ), 'test', 0 ) == expected
 
 
-@pytest.mark.parametrize(
-    'prefix, expected',
-    [ ( 'Module| ', 'Module| ' ) ],
-)
-def test_110_module_prefix( prefix, expected, configuration ) -> None:
-    ''' Module prefix can be unset or custom. '''
-    module = configuration.Module( prefix = prefix )
-    assert module.prefix == expected, (
-        f"Expected prefix '{expected}', got '{module.prefix}'" )
-
-
-@pytest.mark.parametrize(
-    'flavor_id, prefix, expected_prefix',
-    [ ( 0, 'Custom| ', 'Custom| ' ) ],
-)
-def test_120_flavor_prefix(
-    flavor_id, prefix, expected_prefix, configuration
-) -> None:
-    ''' Flavor prefix uses default trace prefix or custom override. '''
-    flavor = configuration.Flavor( prefix = prefix )
-    vehicle = configuration.Vehicle( flavors = { flavor_id: flavor } )
-    assert vehicle.flavors[ flavor_id ].prefix == expected_prefix, (
-        f"Expected prefix '{expected_prefix}', "
-        f"got '{vehicle.flavors[ flavor_id ].prefix}'" )
-
-
-def test_200_default_flavors( configuration ) -> None:
+def test_100_default_flavors( configuration ):
     ''' Vehicle provides default trace flavors 0-9. '''
-    vehicle = configuration.Vehicle( )
-    assert len( vehicle.flavors ) == 10, (
-        f"Expected 10 flavors, got {len( vehicle.flavors )}" )
+    vehicle = configuration.VehicleConfiguration( )
+    assert len( vehicle.flavors ) == 10
     for i in range( 10 ):
-        expected = f'TRACE{i}| '
-        assert vehicle.flavors[ i ].prefix == expected, (
-            f"Flavor {i} expected prefix '{expected}', "
-            f"got '{vehicle.flavors[ i ].prefix}'" )
+        assert vehicle.flavors[ i ].prefix_emitter == f'TRACE{i}| '

@@ -30,7 +30,7 @@ jobs:
       platforms: '${{ needs.initialize.outputs.platforms }}'
       python-descriptors: '${{ needs.initialize.outputs.python-descriptors }}'
       python-versions: '${{ needs.initialize.outputs.python-versions }}'
-      
+
 
   report:
     needs: [initialize, test]
@@ -81,7 +81,7 @@ jobs:
           print-hash: true
           skip-existing: ${{ inputs.which-pypi == 'testpypi' }}
 
-  
+
 
   publish-github:
     if: ${{ startsWith(github.ref, 'refs/tags/') }}
@@ -90,7 +90,7 @@ jobs:
       - package
       - publish-pypi
       # --- BEGIN: Injected by Copier ---
-      
+
       # --- END: Injected by Copier ---
     runs-on: ubuntu-latest
     permissions:
@@ -109,20 +109,20 @@ jobs:
           name: python-package-distributions--${{ github.run_id }}
           path: ${{ env.DISTRIBUTIONS_PATH }}
 
-      
+
 
       - name: Generate Integrity Check Values
         run: |
           set -eu -o pipefail
           cd ${{ env.DISTRIBUTIONS_PATH }}
-          sha256sum icecream-truck-* >SHA256SUMS.txt
+          sha256sum icecream_truck-* >SHA256SUMS.txt
 
       - name: Sign Distributions
         uses: sigstore/gh-action-sigstore-python@v3.0.0
         with:
           inputs: >-
             ${{ env.DISTRIBUTIONS_PATH }}/SHA256SUMS.txt
-            ${{ env.DISTRIBUTIONS_PATH }}/icecream-truck-*
+            ${{ env.DISTRIBUTIONS_PATH }}/icecream_truck-*
 
       - name: Generate Release Notes
         run: |
@@ -130,9 +130,9 @@ jobs:
           hatch --env develop run \
             towncrier build --draft --version ${GITHUB_REF_NAME} \
             >.auxiliary/artifacts/tc-release-notes.rst
-          
+
           cp .auxiliary/artifacts/tc-release-notes.rst .auxiliary/artifacts/release-notes.rst
-          
+
 
       - name: Create Release
         env:

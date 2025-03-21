@@ -17,41 +17,33 @@
    +--------------------------------------------------------------------------+
 
 
-Recipes
+Simple Cases
 ===============================================================================
 
-The ``recipes`` package provides convenience modules for various tasks like
-integration with Python standard library logging or use of the ``rich`` package
-for formatting or printing.
-
-Logging Integration
+Adjustable Trace Level via Environment Variable
 -------------------------------------------------------------------------------
 
-(Example courtesy of xAI grok-3.)
+By default, ``icecream-truck`` does not produce any output. You, as an
+application developer, will need to determine how much output you want from it
+and whether you will let your users adjust that knob. Having a default trace
+depth, which can be overridden by environment variable is one simple way to
+achieve this.
 
-.. literalinclude:: ../../../examples/logging/__main__.py
+.. literalinclude:: ../../../examples/simple/__main__.py
    :language: python
 
+Running this will result in::
 
-Running this will result in the following::
+    TRACE0| 'Icecream tracing active.'
+    TRACE2| operator: <built-in function mul>
+    TRACE1| answer: 42
 
-    INFO: ic| 'Scanning', files: ['data1.txt', 'data2.txt']
-    WARNING: ic| 'Missing', file: 'data1.txt'
-    WARNING: ic| 'Missing', file: 'data2.txt'
+Running this with ``ICTRUCK_TRACE_LEVELS=3`` in the environment will result
+in::
 
-
-``rich`` Integration
--------------------------------------------------------------------------------
-
-(Example courtesy of xAI grok-3.)
-
-.. literalinclude:: ../../../examples/rich/__main__.py
-   :language: python
-
-Running this will result in the following (or something similar, depending on
-your terminal colors and width):
-
-.. image:: recipe-rich-termcap.png
-   :alt: Rich Recipe Terminal Screen Capture
-   :width: 800
-   :align: center
+    TRACE0| 'Icecream tracing active.'
+    TRACE2| operator: <built-in function mul>
+    TRACE3| datum: 2
+    TRACE3| datum: 3
+    TRACE3| datum: 7
+    TRACE1| answer: 42

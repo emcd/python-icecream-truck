@@ -27,17 +27,12 @@ from . import exceptions
 # --- END: Injected by Copier ---
 
 
-from .configuration import (
-    Flavor as FlavorConfiguration,
-    Module as ModuleConfiguration,
-    Vehicle as VehicleConfiguration,
-)
+from .configuration import *
 from .exceptions import *
-from .recipes import *
 from .vehicles import *
 
 
-__version__ = '1.0a0'
+__version__ = '1.0a1'
 
 
 # TODO: Also reclassify package modules as concealed.

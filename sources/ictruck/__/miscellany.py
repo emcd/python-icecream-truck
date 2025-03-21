@@ -18,10 +18,18 @@
 #============================================================================#
 
 
-''' Common constants, imports, and utilities. '''
+''' Miscellaneous package internals. '''
 
 
-# Expose everything from internal modules.
-from .imports import *
-from .miscellany import *
-from .validators import *
+from __future__ import annotations
+
+from . import imports as __
+
+
+def install_builtin_safely(
+    alias: str, installee: __.typx.Any, errorclass: type[ Exception ]
+) -> None:
+    ''' Adds attribute to interpreter builtins, if absent. '''
+    import builtins
+    if hasattr( builtins, alias ): raise errorclass( builtins, alias )
+    setattr( builtins, alias, installee )

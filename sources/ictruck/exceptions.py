@@ -51,6 +51,14 @@ class ArgumentClassInvalidity( Omnierror, TypeError ):
             f"Argument {name!r} must be an instance of {cnames}." )
 
 
+class AttributeNondisplacement( Omnierror, AttributeError ):
+    ''' Cannot displace existing attribute. '''
+
+    def __init__( self, object_: __.typx.Any, name: str ):
+        super( ).__init__(
+            f"Cannot displace attribute {name!r} on: {object_}" )
+
+
 class FlavorInavailability( Omnierror, ValueError ):
     ''' Requested flavor is not available. '''
 
