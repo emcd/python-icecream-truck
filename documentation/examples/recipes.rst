@@ -17,25 +17,41 @@
    +--------------------------------------------------------------------------+
 
 
-.. include:: ../../README.rst
-
-
-Table of Contents
+Recipes
 ===============================================================================
 
-.. toctree::
-   :maxdepth: 2
+The ``recipes`` package provides convenience modules for various tasks like
+integration with Python standard library logging or use of the ``rich`` package
+for formatting or printing.
 
-   examples/index
-   api
-   changelog
-   contribution/index
-   license
+Logging Integration
+-------------------------------------------------------------------------------
+
+(Example courtesy of xAI grok-3.)
+
+.. literalinclude:: ../../examples/logging/__main__.py
+   :language: python
 
 
-Indices
-===============================================================================
+Running this will result in the following::
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+    INFO: ic| 'Scanning', files: ['data1.txt', 'data2.txt']
+    WARNING: ic| 'Missing', file: 'data1.txt'
+    WARNING: ic| 'Missing', file: 'data2.txt'
+
+
+``rich`` Integration
+-------------------------------------------------------------------------------
+
+(Example courtesy of xAI grok-3.)
+
+.. literalinclude:: ../../examples/rich/__main__.py
+   :language: python
+
+Running this will result in the following (or something similar, depending on
+your terminal colors and width):
+
+.. image:: recipe-rich-termcap.png
+   :alt: Rich Recipe Terminal Screen Capture
+   :width: 800
+   :align: center

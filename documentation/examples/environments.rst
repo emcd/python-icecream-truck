@@ -25,7 +25,7 @@ environment variables.
 
 (Example courtesy of Anthropic claude-3-7-sonnet.)
 
-.. literalinclude:: ../../../examples/environments/__main__.py
+.. literalinclude:: ../../examples/environments/__main__.py
    :language: python
 
 Running this will result in the following (or something similar)::

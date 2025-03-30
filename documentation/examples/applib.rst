@@ -27,12 +27,12 @@ Application and Module with Custom Flavors
 
 An example application which uses a library module for some analytics:
 
-.. literalinclude:: ../../../examples/applib/__main__.py
+.. literalinclude:: ../../examples/applib/__main__.py
    :language: python
 
 And the library module for analytics:
 
-.. literalinclude:: ../../../examples/applib/analytics.py
+.. literalinclude:: ../../examples/applib/analytics.py
    :language: python
 
 Running this will result in::
