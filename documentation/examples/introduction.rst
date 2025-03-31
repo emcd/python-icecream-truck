@@ -45,6 +45,9 @@ debugging:
 This mirrors ``icecream``’s ``ic``—variable names are inferred automatically,
 controlled by ``trace_levels`` (0-9) with default ``TRACE{i}|`` prefixes.
 
+If another truck is already installed, the new installation will preserve any
+existing module configurations while applying the new settings.
+
 Custom Flavors
 -------------------------------------------------------------------------------
 
@@ -92,6 +95,28 @@ In library code:
     status = 'OK'
 
 This keeps library debugging separate, avoiding global namespace conflicts.
+
+Configuration Preservation
+-------------------------------------------------------------------------------
+
+When installing a new truck into the Python builtins:
+
+1. Module-specific configurations are preserved.
+2. Global settings (trace_levels, active_flavors, etc.) are updated.
+3. Printer factory and general configuration can be replaced.
+
+This enables:
+
+.. code-block:: python
+
+    # Library code (runs first)
+    from ictruck import register_module
+    register_module( prefix_emitter = 'LIB| ' )
+    # Application code (runs later)
+    from ictruck import install
+    install( trace_levels = 2 )  # Keeps LIB| prefix but updates trace levels
+    # Both work together
+    ictr( 0 )( 'message' )  # Output: LIB| message: 'message'
 
 Direct Truck Usage
 -------------------------------------------------------------------------------

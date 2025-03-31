@@ -17,7 +17,7 @@
    +--------------------------------------------------------------------------+
 
 *******************************************************************************
-                                 icecream-truck                                
+                                 icecream-truck
 *******************************************************************************
 
 .. image:: https://img.shields.io/pypi/v/icecream-truck
@@ -124,6 +124,11 @@ used to register a default configuration:
 
     from ictruck import register_module
     register_module( )  # Can pass custom configuration.
+
+When ``install`` is called, any module configurations that were previously
+registered via ``register_module`` are added to the installed truck. This
+allows an application to setup output after libraries have already registered
+their flavors, giving lots of initialization-time and runtime flexibility.
 
 Recipes for Customization
 -------------------------------------------------------------------------------

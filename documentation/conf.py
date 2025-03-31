@@ -88,6 +88,7 @@ nitpick_ignore = [
     ( 'py:class', "ictruck.configuration.Annotated" ),
     ( 'py:class', "types.Annotated" ),
     ( 'py:class', "typing_extensions.Any" ),
+    ( 'py:class', "typing_extensions.Self" ),
 ]
 
 # -- Options for linkcheck builder -------------------------------------------

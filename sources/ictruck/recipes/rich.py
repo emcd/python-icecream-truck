@@ -85,10 +85,11 @@ def install( # pylint: disable=too-many-arguments
     mode: ProduceTruckModeArgument = Modes.Formatter,
     stderr: ProduceTruckStderrArgument = True,
 ) -> __.Truck:
-    ''' Installs configured truck into builtins.
+    ''' Produces truck and installs it into builtins with alias.
 
-        Application developers should call this early before importing
-        library packages which may also use the builtin truck.
+        Replaces an existing truck, preserving its module configurations.
+
+        Library developers should call :py:func:`__.register_module` instead.
     '''
     truck = produce_truck(
         flavors = flavors,
@@ -96,9 +97,7 @@ def install( # pylint: disable=too-many-arguments
         trace_levels = trace_levels,
         mode = mode,
         stderr = stderr )
-    __.install_builtin_safely(
-        alias, truck, __.exceptions.AttributeNondisplacement )
-    return truck
+    return truck.install( alias = alias )
 
 
 @_validate_arguments
