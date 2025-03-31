@@ -23,16 +23,23 @@ Library Coordination
 Application and Module with Custom Flavors
 -------------------------------------------------------------------------------
 
+When the application installs its own truck configuration, any module
+configurations registered by libraries will be preserved. This allows:
+
+1. Applications to control global settings like trace levels.
+2. Libraries to maintain their own debug output formatting.
+3. Both to coexist without configuration conflicts.
+
 (Example courtesy of Anthropic claude-3-7-sonnet.)
 
 An example application which uses a library module for some analytics:
 
-.. literalinclude:: ../../../examples/applib/__main__.py
+.. literalinclude:: ../../examples/applib/__main__.py
    :language: python
 
 And the library module for analytics:
 
-.. literalinclude:: ../../../examples/applib/analytics.py
+.. literalinclude:: ../../examples/applib/analytics.py
    :language: python
 
 Running this will result in::

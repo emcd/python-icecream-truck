@@ -46,14 +46,13 @@ def install(
     alias: __.InstallAliasArgument = __.builtins_alias_default,
     additional_aliases: InstallAdditionalAliasesArgument = __.absent,
 ) -> __.Truck:
-    ''' Installs configured truck into builtins.
+    ''' Produces truck and installs it into builtins with alias.
 
-        Application developers should call this early before importing
-        library packages which may also use the builtin truck.
+        Replaces an existing truck, preserving its module configurations.
+
+        Library developers should call :py:func:`__.register_module` instead.
     '''
-    truck = produce_truck( )
-    __.install_builtin_safely(
-        alias, truck, __.exceptions.AttributeNondisplacement )
+    truck = produce_truck( ).install( alias = alias )
     if __.is_absent( additional_aliases ): additional_aliases = { }
     for falias, flavor in additional_aliases.items( ):
         __.install_builtin_safely(

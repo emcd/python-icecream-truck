@@ -25,7 +25,7 @@ def _import_version( ):
     from importlib import import_module
     from pathlib import Path
     from sys import path
-    project_location = Path( __file__ ).parent.parent.parent
+    project_location = Path( __file__ ).parent.parent
     path.insert( 0, str( project_location / 'sources' ) )
     module = import_module( 'ictruck' )
     return module.__version__
@@ -88,6 +88,7 @@ nitpick_ignore = [
     ( 'py:class', "ictruck.configuration.Annotated" ),
     ( 'py:class', "types.Annotated" ),
     ( 'py:class', "typing_extensions.Any" ),
+    ( 'py:class', "typing_extensions.Self" ),
 ]
 
 # -- Options for linkcheck builder -------------------------------------------
@@ -102,6 +103,8 @@ linkcheck_ignore = [
     r'https://github\.com/emcd/python-icecream-truck/.*',
     # Package does not exist during initial development.
     r'https://pypi.org/project/ictruck/',
+    # Badge redirects are now blocked for our user agent apparently.
+    r'https://img\.shields\.io/endpoint\?url=.*',
 ]
 
 # -- Options for HTML output -------------------------------------------------

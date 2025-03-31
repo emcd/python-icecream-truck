@@ -21,7 +21,6 @@ dependencies = [
   'icecream',
   'typing-extensions',
   # --- BEGIN: Injected by Copier ---
-
   # --- END: Injected by Copier ---
 ]
 classifiers = [ # https://pypi.org/classifiers
@@ -29,6 +28,7 @@ classifiers = [ # https://pypi.org/classifiers
   'Intended Audience :: Developers',
   'License :: OSI Approved :: Apache Software License',
   'Programming Language :: Python :: 3 :: Only',
+  # --- BEGIN: Injected by Copier ---
   'Programming Language :: Python :: 3.10',
   'Programming Language :: Python :: 3.11',
   'Programming Language :: Python :: 3.12',
@@ -75,7 +75,6 @@ directory = '.auxiliary/artifacts/hatch-build'
 only-include = [
   'sources/ictruck',
   # --- BEGIN: Injected by Copier ---
-
   # --- END: Injected by Copier ---
 ]
 strict-naming = false
@@ -83,12 +82,13 @@ strict-naming = false
 only-include = [
   'sources/ictruck',
   # --- BEGIN: Injected by Copier ---
-
   # --- END: Injected by Copier ---
 ]
 strict-naming = false
 [tool.hatch.build.targets.wheel.sources]
 'sources/ictruck' = 'ictruck'
+# --- BEGIN: Injected by Copier ---
+# --- END: Injected by Copier ---
 [tool.hatch.envs.default]
 python = '3.10'
 [tool.hatch.envs.develop]
@@ -122,34 +122,38 @@ dependencies = [
 ]
 post-install-commands = [
   # --- BEGIN: Injected by Copier ---
-
   # --- END: Injected by Copier ---
 ]
 [tool.hatch.envs.develop.env-vars]
-HYPOTHESIS_STORAGE_DIRECTORY = '.auxiliary/caches/hypothesis'
 PYTHONUNBUFFERED = 'TRUE' # TODO: Only for coverage/pytest.
+# --- BEGIN: Injected by Copier ---
+HYPOTHESIS_STORAGE_DIRECTORY = '.auxiliary/caches/hypothesis'
+# --- END: Injected by Copier ---
 [tool.hatch.envs.develop.scripts]
 docsgen = [
   '''sphinx-build -E -b doctest -d .auxiliary/caches/sphinx \
-     documentation/sphinx .auxiliary/artifacts/sphinx-doctest''',
+     documentation .auxiliary/artifacts/sphinx-doctest''',
   '''sphinx-build -E -b linkcheck -d .auxiliary/caches/sphinx \
-     documentation/sphinx .auxiliary/artifacts/sphinx-linkcheck''',
+     documentation .auxiliary/artifacts/sphinx-linkcheck''',
   '''sphinx-build -a -d .auxiliary/caches/sphinx \
-     documentation/sphinx .auxiliary/artifacts/sphinx-html''',
+     documentation .auxiliary/artifacts/sphinx-html''',
 ]
 linters = [
   '''ruff check --quiet sources documentation tests''',
+  # --- BEGIN: Injected by Copier ---
+  # --- END: Injected by Copier ---
   '''bandit --configfile pyproject.toml --quiet --recursive sources''',
   '''tryceratops sources''',
   '''pyright sources''',
   '''pylint --recursive yes sources documentation tests''',
   '''semgrep --config p/python --error --quiet --skip-unknown-extensions \
      sources/ictruck''',
+  # --- BEGIN: Injected by Copier ---
+  # --- END: Injected by Copier ---
 ]
 packagers = [
   '''hatch build''',
   # --- BEGIN: Injected by Copier ---
-
   # --- END: Injected by Copier ---
 ]
 testers = [
@@ -209,8 +213,6 @@ split_on_trailing_comma = true
 #star_first = false
 #supported_extensions = [ 'pxd', 'py', 'pyi', 'pyx' ]
 use_parentheses = true
-
-
 
 # https://mypy.readthedocs.io/en/stable/config_file.html
 [tool.mypy]
@@ -434,8 +436,8 @@ ignore = [
 ]
 
 [tool.towncrier]
-directory = 'documentation/towncrier'
-filename = 'changelog.rst'
+directory = '.auxiliary/data/towncrier'
+filename = 'documentation/changelog.rst'
 package = 'ictruck'
 package_dir = 'sources'
 [[tool.towncrier.type]]

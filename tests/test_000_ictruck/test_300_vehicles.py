@@ -285,6 +285,8 @@ def test_500_install_basic( vehicles, exceptions, clean_builtins ):
     import builtins
     assert 'ictr' in builtins.__dict__
     assert isinstance( truck, vehicles.Truck )
+    vehicles.install( )
+    setattr( builtins, 'ictr', 'non-truck' )
     with pytest.raises( exceptions.AttributeNondisplacement ):
         vehicles.install( )
 
@@ -338,6 +340,34 @@ def test_505_install_with_generalcfg(
     truck = vehicles.install( generalcfg = generalcfg )
     assert generalcfg is truck.generalcfg
     assert generalcfg.prefix_emitter == 'foo:: '
+
+
+def test_506_install_preserves_module_configs(
+    vehicles, configuration, clean_builtins, simple_output
+):
+    ''' Installing new truck preserves existing module configurations. '''
+    # First installation with some module configs
+    truck1 = vehicles.install( )
+    flavors1 = {
+        'lib1': configuration.FlavorConfiguration( prefix_emitter = 'LIB1| ' )
+    }
+    vehicles.register_module( name = 'library1', flavors = flavors1 )
+    # Second installation with different settings
+    # but should preserve module configs
+    truck2 = vehicles.install(
+        trace_levels = 3,
+        printer_factory = simple_output )
+    # Verify:
+    # 1. New settings were applied
+    assert truck2.trace_levels[ None ] == 3
+    assert truck2.printer_factory is simple_output
+    # 2. Module configs were preserved
+    assert 'library1' in truck2.modulecfgs
+    assert (
+        truck2.modulecfgs[ 'library1' ].flavors[ 'lib1' ].prefix_emitter
+        == 'LIB1| ' )
+    # 3. The trucks are different instances
+    assert truck1 is not truck2
 
 
 def test_600_register_module_basic( vehicles, configuration, clean_builtins ):

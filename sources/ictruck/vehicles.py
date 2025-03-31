@@ -20,6 +20,12 @@
 
 ''' Vehicles which vend flavors of Icecream debugger. '''
 
+# TODO: Always add module configuration for 'ictruck' itself to trucks.
+#       This allows for it to trace much of its own execution if its flavors
+#       are activated. Suggested flavors:
+#           ictruck-note: Noteworthy event.
+#           ictruck-error: Error.
+
 
 from __future__ import annotations
 
@@ -36,6 +42,7 @@ if __.typx.TYPE_CHECKING: # pragma: no cover
 # pylint: enable=import-error,import-private-name
 
 
+_installer_lock: __.threads.Lock = __.threads.Lock( )
 _validate_arguments = (
     __.validate_arguments(
         globalvars = globals( ),
@@ -141,11 +148,31 @@ class Truck( metaclass = __.ImmutableCompleteDataclass ):
         return debugger
 
     @_validate_arguments
+    def install( self, alias: str = builtins_alias_default ) -> __.typx.Self:
+        ''' Installs truck into builtins with provided alias.
+
+            Replaces an existing truck, preserving its module configurations.
+
+            Library developers should call :py:func:`register_module` instead.
+        '''
+        import builtins
+        with _installer_lock:
+            truck_o = getattr( builtins, alias, None )
+            if isinstance( truck_o, Truck ):
+                # TODO: self( 'ictruck-note' )( 'truck replacement', self )
+                self.modulecfgs.update( truck_o.modulecfgs )
+                setattr( builtins, alias, self )
+            else:
+                __.install_builtin_safely(
+                    alias, self, _exceptions.AttributeNondisplacement )
+        return self
+
+    @_validate_arguments
     def register_module(
         self,
         name: __.Absential[ str ] = __.absent,
         configuration: __.Absential[ _cfg.ModuleConfiguration ] = __.absent,
-    ) -> None:
+    ) -> __.typx.Self:
         ''' Registers configuration for module.
 
             If no module or package name is given, then the current module is
@@ -158,6 +185,7 @@ class Truck( metaclass = __.ImmutableCompleteDataclass ):
         if __.is_absent( configuration ):
             configuration = _cfg.ModuleConfiguration( )
         self.modulecfgs[ name ] = configuration # pylint: disable=unsupported-assignment-operation
+        return self
 
 
 ActiveFlavors: __.typx.TypeAlias = frozenset[ _cfg.Flavor ]
@@ -268,10 +296,9 @@ def install(
     printer_factory: ProduceTruckPrinterFactoryArgument = __.absent,
     trace_levels: ProduceTruckTraceLevelsArgument = __.absent,
 ) -> Truck:
-    ''' Installs configured truck into builtins.
+    ''' Produces truck and installs it into builtins with alias.
 
-        Application developers should call this early before importing
-        library packages which may also use the builtin truck.
+        Replaces an existing truck, preserving its module configurations.
 
         Library developers should call :py:func:`register_module` instead.
     '''
@@ -280,9 +307,7 @@ def install(
         generalcfg = generalcfg,
         printer_factory = printer_factory,
         trace_levels = trace_levels )
-    __.install_builtin_safely(
-        alias, truck, _exceptions.AttributeNondisplacement )
-    return truck
+    return truck.install( alias = alias )
 
 
 @_validate_arguments
@@ -334,10 +359,14 @@ def register_module(
         without overriding anything set by the application or other libraries.
         Application developers should call :py:func:`install` instead.
     '''
-    if builtins_alias_default not in __builtins__:
+    import builtins
+    truck = getattr( builtins, builtins_alias_default, None )
+    if not isinstance( truck, Truck ):
         truck = Truck( printer_factory = lambda mname, flavor: lambda x: None )
-        __builtins__[ builtins_alias_default ] = truck
-    else: truck = __builtins__[ builtins_alias_default ]
+        __.install_builtin_safely(
+            builtins_alias_default,
+            truck,
+            _exceptions.AttributeNondisplacement )
     nomargs: dict[ str, __.typx.Any ] = { }
     if not __.is_absent( flavors ):
         nomargs[ 'flavors' ] = __.ImmutableDictionary( flavors )
