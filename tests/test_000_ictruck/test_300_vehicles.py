@@ -31,6 +31,20 @@ from hypothesis import strategies as st
 from . import PACKAGE_NAME, cache_import_module
 
 
+valid_env_str = st.text(
+    st.characters(
+        codec='utf-8',
+        exclude_characters=['\x00']  # Explicitly exclude null bytes
+    )
+)
+
+
+@pytest.fixture( scope = 'session' )
+def base( ):
+    ''' Provides internals module. '''
+    return cache_import_module( f"{PACKAGE_NAME}.__" )
+
+
 @pytest.fixture( scope = 'session' )
 def configuration( ):
     ''' Provides configuration module. '''
@@ -47,6 +61,15 @@ def exceptions( ):
 def vehicles( ):
     ''' Provides vehicles module. '''
     return cache_import_module( f"{PACKAGE_NAME}.vehicles" )
+
+
+@pytest.fixture
+def mock_env( monkeypatch ):
+    ''' Fixture for mocking environment variables. '''
+    def _mock_env( env_dict ):
+        for k, v in env_dict.items( ):
+            monkeypatch.setenv( k, v )
+    return _mock_env
 
 
 def test_111_invalid_flavor_type( configuration, exceptions, vehicles ):
@@ -368,6 +391,106 @@ def test_506_install_preserves_module_configs(
         == 'LIB1| ' )
     # 3. The trucks are different instances
     assert truck1 is not truck2
+
+
+def test_510_install_with_default_env_vars(
+    vehicles, base, clean_builtins, simple_output, monkeypatch
+):
+    ''' Installation respects default environment. '''
+    monkeypatch.setenv( 'ICTRUCK_ACTIVE_FLAVORS', 'x.y:note,abort+z:success' )
+    monkeypatch.setenv( 'ICTRUCK_TRACE_LEVELS', '2+x.y:5' )
+    truck = vehicles.install( printer_factory = simple_output )
+    assert truck.active_flavors == base.ImmutableDictionary( {
+        'x.y': frozenset( { 'note', 'abort' } ),
+        'z': frozenset( { 'success' } ) } )
+    assert truck.trace_levels == (
+        base.ImmutableDictionary( { None: 2, 'x.y': 5 } ) )
+
+
+def test_511_install_with_custom_env_vars(
+    vehicles, base, clean_builtins, simple_output, monkeypatch
+):
+    ''' Installation uses custom environment variable names when provided. '''
+    monkeypatch.setenv( 'CUSTOM_FLAVORS', 'test:errorx' )
+    monkeypatch.setenv( 'CUSTOM_LEVELS', '3' )
+    truck = vehicles.install(
+        evname_active_flavors = 'CUSTOM_FLAVORS',
+        evname_trace_levels = 'CUSTOM_LEVELS',
+        printer_factory = simple_output )
+    assert truck.active_flavors == (
+        base.ImmutableDictionary( { 'test': frozenset( { 'errorx' } ) } ) )
+    assert truck.trace_levels == base.ImmutableDictionary( { None: 3 } )
+
+
+def test_512_install_with_env_vars_disabled(
+    vehicles, base, clean_builtins, simple_output, monkeypatch
+):
+    ''' Installation skips environment parsing when evname is None. '''
+    monkeypatch.setenv( 'ICTRUCK_ACTIVE_FLAVORS', 'x.y:foo' )
+    monkeypatch.setenv( 'ICTRUCK_TRACE_LEVELS', '4' )
+    truck = vehicles.install(
+        evname_active_flavors = None,
+        evname_trace_levels = None,
+        printer_factory = simple_output )
+    assert truck.active_flavors == base.ImmutableDictionary( { } )
+    assert truck.trace_levels == base.ImmutableDictionary( { None: -1 } )
+
+
+def test_513_install_with_direct_args_overrides_env(
+    vehicles, base, clean_builtins, simple_output, monkeypatch
+):
+    ''' Direct arguments override environment parsing. '''
+    monkeypatch.setenv( 'ICTRUCK_ACTIVE_FLAVORS', 'x.y:note' )
+    monkeypatch.setenv( 'ICTRUCK_TRACE_LEVELS', '2' )
+    truck = vehicles.install(
+        active_flavors = { 'z': { 'success' } },
+        trace_levels = { 'z': 1 },
+        printer_factory = simple_output )
+    assert truck.active_flavors == (
+        base.ImmutableDictionary( { 'z': frozenset( { 'success' } ) } ) )
+    assert truck.trace_levels == (
+        base.ImmutableDictionary( { None: -1, 'z': 1 } ) )
+
+
+def test_514_produce_truck_with_env_vars(
+    vehicles, base, simple_output, monkeypatch
+):
+    ''' Truck production respects environment when no direct args. '''
+    monkeypatch.setenv( 'ICTRUCK_ACTIVE_FLAVORS', 'global:debug' )
+    monkeypatch.setenv( 'ICTRUCK_TRACE_LEVELS', '0' )
+    truck = vehicles.produce_truck( printer_factory = simple_output )
+    assert truck.active_flavors == (
+        base.ImmutableDictionary( { 'global': frozenset( { 'debug' } ) } ) )
+    assert truck.trace_levels == base.ImmutableDictionary( { None: 0 } )
+
+
+def test_515_install_with_global_env_flavors(
+    vehicles, base, clean_builtins, simple_output, monkeypatch
+):
+    ''' Installation parses global active flavors from environment. '''
+    monkeypatch.setenv( 'ICTRUCK_ACTIVE_FLAVORS', 'foo,bar' )
+    truck = vehicles.install( printer_factory = simple_output )
+    assert truck.active_flavors == (
+        base.ImmutableDictionary( { None: frozenset( { 'foo', 'bar' } ) } ) )
+
+
+def test_516_install_with_invalid_trace_levels(
+    vehicles, base, clean_builtins, simple_output, monkeypatch
+):
+    ''' Installation skips invalid trace levels in environment. '''
+    monkeypatch.setenv( 'ICTRUCK_TRACE_LEVELS', 'abc+x.y:5+z:def' )
+    truck = vehicles.install( printer_factory = simple_output )
+    assert truck.trace_levels == (
+        base.ImmutableDictionary( { None: -1, 'x.y': 5 } ) )
+
+
+def test_517_produce_truck_with_invalid_global_trace_level(
+    vehicles, base, simple_output, monkeypatch
+):
+    ''' Truck production skips invalid trace level in environment. '''
+    monkeypatch.setenv( 'ICTRUCK_TRACE_LEVELS', 'invalid' )
+    truck = vehicles.produce_truck( printer_factory = simple_output )
+    assert truck.trace_levels == base.ImmutableDictionary( { None: -1 } )
 
 
 def test_600_register_module_basic( vehicles, configuration, clean_builtins ):

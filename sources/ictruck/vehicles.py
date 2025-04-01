@@ -220,6 +220,36 @@ ProduceTruckActiveFlavorsArgument: __.typx.TypeAlias = __.typx.Annotated[
             Module-specific entries merge with global entries.
         ''' ),
 ]
+ProduceTruckEvnActiveFlavorsArgument: __.typx.TypeAlias = __.typx.Annotated[
+    __.Absential[ __.typx.Optional[ str ] ],
+    __.typx.Doc(
+        ''' Name of environment variable for active flavors or ``None``.
+
+            If absent, then a default environment variable name is used.
+
+            If ``None``, then active flavors are not parsed from the process
+            environment.
+
+            If active flavors are supplied directly to a function,
+            which also accepts this argument, then active flavors are not
+            parsed from the process environment.
+        ''' ),
+]
+ProduceTruckEvnTraceLevelsArgument: __.typx.TypeAlias = __.typx.Annotated[
+    __.Absential[ __.typx.Optional[ str ] ],
+    __.typx.Doc(
+        ''' Name of environment variable for trace levels or ``None``.
+
+            If absent, then a default environment variable name is used.
+
+            If ``None``, then trace levels are not parsed from the process
+            environment.
+
+            If trace levels are supplied directly to a function,
+            which also accepts this argument, then trace levels are not
+            parsed from the process environment.
+        ''' ),
+]
 ProduceTruckFlavorsArgument: __.typx.TypeAlias = __.typx.Annotated[
     __.Absential[ _cfg.FlavorsRegistryLiberal ],
     __.typx.Doc( ''' Registry of flavor identifiers to configurations. ''' ),
@@ -288,13 +318,16 @@ RegisterModulePrefixEmitterArgument: __.typx.TypeAlias = __.typx.Annotated[
         ''' ),
 ]
 
+
 @_validate_arguments
-def install(
+def install( # pylint: disable=too-many-arguments
     alias: InstallAliasArgument = builtins_alias_default,
     active_flavors: ProduceTruckActiveFlavorsArgument = __.absent,
     generalcfg: ProduceTruckGeneralcfgArgument = __.absent,
     printer_factory: ProduceTruckPrinterFactoryArgument = __.absent,
     trace_levels: ProduceTruckTraceLevelsArgument = __.absent,
+    evname_active_flavors: ProduceTruckEvnActiveFlavorsArgument = __.absent,
+    evname_trace_levels: ProduceTruckEvnTraceLevelsArgument = __.absent,
 ) -> Truck:
     ''' Produces truck and installs it into builtins with alias.
 
@@ -306,16 +339,20 @@ def install(
         active_flavors = active_flavors,
         generalcfg = generalcfg,
         printer_factory = printer_factory,
-        trace_levels = trace_levels )
+        trace_levels = trace_levels,
+        evname_active_flavors = evname_active_flavors,
+        evname_trace_levels = evname_trace_levels )
     return truck.install( alias = alias )
 
 
 @_validate_arguments
-def produce_truck(
+def produce_truck( # pylint: disable=too-many-arguments
     active_flavors: ProduceTruckActiveFlavorsArgument = __.absent,
     generalcfg: ProduceTruckGeneralcfgArgument = __.absent,
     printer_factory: ProduceTruckPrinterFactoryArgument = __.absent,
     trace_levels: ProduceTruckTraceLevelsArgument = __.absent,
+    evname_active_flavors: ProduceTruckEvnActiveFlavorsArgument = __.absent,
+    evname_trace_levels: ProduceTruckEvnTraceLevelsArgument = __.absent,
 ) -> Truck:
     ''' Produces icecream truck with some shorthand argument values. '''
     # TODO: Deeper validation of active flavors and trace levels.
@@ -333,12 +370,20 @@ def produce_truck(
             nomargs[ 'active_flavors' ] = __.ImmutableDictionary( {
                 mname: frozenset( flavors )
                 for mname, flavors in active_flavors.items( ) } )
+    elif evname_active_flavors is not None:
+        nomargs[ 'active_flavors' ] = (
+            active_flavors_from_environment( evname = evname_active_flavors ) )
     if not __.is_absent( trace_levels ):
         if isinstance( trace_levels, int ):
             nomargs[ 'trace_levels' ] = __.ImmutableDictionary(
                 { None: trace_levels } )
         else:
-            nomargs[ 'trace_levels' ] = __.ImmutableDictionary( trace_levels )
+            trace_levels_: TraceLevelsRegistryLiberal = { None: -1 }
+            trace_levels_.update( trace_levels )
+            nomargs[ 'trace_levels' ] = __.ImmutableDictionary( trace_levels_ )
+    elif evname_trace_levels is not None:
+        nomargs[ 'trace_levels' ] = (
+            trace_levels_from_environment( evname = evname_trace_levels ) )
     return Truck( **nomargs )
 
 
@@ -378,6 +423,45 @@ def register_module(
         nomargs[ 'prefix_emitter' ] = prefix_emitter
     configuration = _cfg.ModuleConfiguration( **nomargs )
     truck.register_module( name = name, configuration = configuration )
+
+
+def active_flavors_from_environment(
+    evname: __.Absential[ str ] = __.absent
+) -> ActiveFlavorsRegistry:
+    ''' Extracts active flavors from named environment variable. '''
+    active_flavors: ActiveFlavorsRegistryLiberal = { }
+    if __.is_absent( evname ): name = 'ICTRUCK_ACTIVE_FLAVORS'
+    else: name = evname
+    value = __.os.getenv( name, '' )
+    for part in value.split( '+' ):
+        if not part: continue
+        if ':' in part: # pylint: disable=magic-value-comparison
+            mname, flavors = part.split( ':', 1 )
+            active_flavors[ mname ] = flavors.split( ',' )
+        else: active_flavors[ None ] = part.split( ',' )
+    return __.ImmutableDictionary( {
+        mname: frozenset( flavors )
+        for mname, flavors in active_flavors.items( ) } )
+
+
+def trace_levels_from_environment(
+    evname: __.Absential[ str ] = __.absent
+) -> TraceLevelsRegistry:
+    ''' Extracts trace levels from named environment variable. '''
+    trace_levels: TraceLevelsRegistryLiberal = { None: -1 }
+    if __.is_absent( evname ): name = 'ICTRUCK_TRACE_LEVELS'
+    else: name = evname
+    value = __.os.getenv( name, '' )
+    for part in value.split( '+' ):
+        if not part: continue
+        if ':' in part: # pylint: disable=magic-value-comparison
+            mname, level = part.split( ':', 1 )
+            if not level.isdigit( ): continue # TODO: warn
+            trace_levels[ mname ] = int( level )
+        else:
+            if not part.isdigit( ): continue
+            trace_levels[ None ] = int( part ) # TODO: warn
+    return __.ImmutableDictionary( trace_levels )
 
 
 def _calculate_effective_flavors(
