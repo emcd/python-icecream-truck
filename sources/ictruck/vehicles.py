@@ -30,6 +30,7 @@
 from __future__ import annotations
 
 import icecream as _icecream
+import colorama as _colorama
 
 from . import __
 from . import configuration as _cfg
@@ -53,6 +54,18 @@ builtins_alias_default: __.typx.Annotated[
     str,
     __.typx.Doc( ''' Default alias for global truck in builtins module. ''' ),
 ] = 'ictr'
+
+
+@_validate_arguments
+def produce_simple_printer(
+    target: __.io.TextIOBase,
+    # pylint: disable=unused-argument
+    mname: str,
+    flavor: _cfg.Flavor,
+    # pylint: enable=unused-argument
+) -> Printer:
+    ''' Produces printer which uses standard Python 'print'. '''
+    return __.funct.partial( _simple_print, target = target )
 
 
 class Truck( metaclass = __.ImmutableCompleteDataclass ):
@@ -97,9 +110,7 @@ class Truck( metaclass = __.ImmutableCompleteDataclass ):
                 return a callable which takes one argument, the string
                 produced by a formatter.
             ''' ),
-    ] = __.dcls.field(
-        default_factory = (
-            lambda: lambda mname, flavor: _icecream.DEFAULT_OUTPUT_FUNCTION ) )
+    ] = __.funct.partial( produce_simple_printer, __.sys.stderr )
     trace_levels: __.typx.Annotated[
         TraceLevelsRegistry,
         __.typx.Doc(
@@ -464,6 +475,21 @@ def trace_levels_from_environment(
     return __.ImmutableDictionary( trace_levels )
 
 
+@__.ctxl.contextmanager
+def windows_replace_ansi_sgr( ) -> __.typx.Generator[ None, None, None ]:
+    ''' Converts ANSI SGR sequences to Windows API calls as necessary.
+
+        Necessary on some older command terminals.
+
+        If not necessary, rendering occurs normally. (I.e., sequences are
+        passed to the terminal.)
+    '''
+    # Note: Copied from the 'icecream' sources.
+    _colorama.init( )
+    yield
+    _colorama.deinit( )
+
+
 def _calculate_effective_flavors(
     flavors: ActiveFlavorsRegistry, mname: str
 ) -> ActiveFlavors:
@@ -574,3 +600,9 @@ def _produce_ic_configuration(
     for fconfig in fconfigs:
         configd = _merge_ic_configuration( configd, fconfig )
     return __.ImmutableDictionary( configd )
+
+
+def _simple_print( text: str, target: __.io.TextIOBase ) -> None:
+    # TODO: If target is not associated with TTY, then strip ANSI SGR.
+    with windows_replace_ansi_sgr( ):
+        print( text, file = target )

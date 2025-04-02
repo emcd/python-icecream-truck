@@ -23,6 +23,8 @@
 # pylint: disable=unused-argument
 
 
+import functools as funct
+
 import hypothesis
 import pytest
 
@@ -70,6 +72,14 @@ def mock_env( monkeypatch ):
         for k, v in env_dict.items( ):
             monkeypatch.setenv( k, v )
     return _mock_env
+
+
+def test_010_simple_printer_output( vehicles, simple_output ):
+    ''' Simple printer outputs text to target stream. '''
+    printer = vehicles.produce_simple_printer( simple_output, 'test', 1 )
+    text = "Test output"
+    printer( text )
+    assert simple_output.getvalue( ) == "Test output\n"
 
 
 def test_111_invalid_flavor_type( configuration, exceptions, vehicles ):
@@ -510,9 +520,12 @@ def test_601_register_module_multiple(
     vehicles, configuration, clean_builtins, simple_output, monkeypatch
 ):
     ''' Register multiple modules with varying configurations. '''
-    monkeypatch.setattr( 'sys.stderr', simple_output )
+    printer_factory = funct.partial(
+        vehicles.produce_simple_printer, simple_output )
     truck = vehicles.install(
-        trace_levels = { __package__: 0 }, active_flavors = { 'foo' } )
+        trace_levels = { __package__: 0 },
+        active_flavors = { 'foo' },
+        printer_factory = printer_factory )
     vehicles.register_module( name = __package__ )  # Default config
     flavors = {
         'foo': configuration.FlavorConfiguration( prefix_emitter = 'foo:: ' ) }
@@ -557,8 +570,11 @@ def test_640_register_module_full_config( # pylint: disable=too-many-locals
     vehicles, configuration, clean_builtins, simple_output, monkeypatch
 ):
     ''' Register module with all arguments configured. '''
-    monkeypatch.setattr( 'sys.stderr', simple_output )
-    truck = vehicles.install( trace_levels = 0, active_flavors = { 'info' } )
+    printer_factory = funct.partial(
+        vehicles.produce_simple_printer, simple_output )
+    truck = vehicles.install(
+        printer_factory = printer_factory,
+        trace_levels = 0, active_flavors = { 'info' } )
     flavors = { 'info': configuration.FlavorConfiguration( ) }
     def custom_formatter( ctrl, mname, flavor ):
         return lambda x: f"Custom: {x}"

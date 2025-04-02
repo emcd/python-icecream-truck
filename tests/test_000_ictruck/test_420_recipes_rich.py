@@ -66,15 +66,7 @@ def test_011_console_formatter_output( recipes, configuration, simple_output ):
     assert '\n' in result  # Rich formatting includes newlines
 
 
-def test_012_simple_printer_output( recipes, simple_output ):
-    ''' Simple printer outputs text to target stream. '''
-    printer = recipes.produce_simple_printer( simple_output, 'test', 1 )
-    text = "Test output"
-    printer( text )
-    assert simple_output.getvalue( ) == "Test output\n"
-
-
-def test_013_console_printer_output( recipes, simple_output ):
+def test_012_console_printer_output( recipes, simple_output ):
     ''' Console printer outputs text with Rich styling. '''
     console = Console( file = simple_output, force_terminal = True )
     printer = recipes.produce_console_printer( console, 'test', 1 )

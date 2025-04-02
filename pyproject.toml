@@ -17,6 +17,7 @@ requires-python = '>= 3.10'
 dependencies = [
   'absence',
   'accretive',
+  'colorama',
   'frigid',
   'icecream',
   'typing-extensions',
@@ -42,7 +43,7 @@ keywords = [ 'icecream', 'debug', 'introspect' ]
 name = 'Eric McDonald'
 email = 'emcd@users.noreply.github.com'
 [project.optional-dependencies]
-rich = [ 'colorama', 'rich' ]
+rich = [ 'rich' ]
 [project.urls]
 'Homepage' = 'https://github.com/emcd/python-icecream-truck'
 'Documentation' = 'https://emcd.github.io/python-icecream-truck'
@@ -276,6 +277,7 @@ ignored-parents = [
   'builtins.TypeError',
   'builtins.ValueError',
   'builtins.type',
+  'enum.Enum',
   'typing.Protocol',
   'typing_extensions.Protocol',
   # --- BEGIN: Injected by Copier ---
