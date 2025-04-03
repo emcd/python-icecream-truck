@@ -42,6 +42,32 @@ _validate_arguments = (
         errorclass = __.exceptions.ArgumentClassInvalidity ) )
 
 
+class Auxiliaries( metaclass = __.ImmutableCompleteDataclass ):
+    ''' Auxiliary functions used by formatters and interpolation.
+
+        Typically used by unit tests to inject mock dependencies,
+        but can also be used to deeply customize output.
+    '''
+
+    exc_info_discoverer: __.typx.Annotated[
+        __.typx.Callable[ [ ], __.ExceptionInfo ],
+        __.typx.Doc( ''' Returns information on current exception. ''' ),
+    ] = __.sys.exc_info
+    pid_discoverer: __.typx.Annotated[
+        __.typx.Callable[ [ ], int ],
+        __.typx.Doc( ''' Returns ID of current process. ''' ),
+    ] = __.os.getpid
+    thread_discoverer: __.typx.Annotated[
+        __.typx.Callable[ [ ], __.threads.Thread ],
+        __.typx.Doc( ''' Returns current thread. ''' ),
+    ] = __.threads.current_thread
+    time_formatter: __.typx.Annotated[
+        __.typx.Callable[ [ str ], str ],
+        __.typx.Doc( ''' Returns current time in specified format. ''' ),
+    ] = __.time.strftime
+
+
+
 class FlavorSpecification( metaclass = __.ImmutableCompleteDataclass ):
     ''' Specification for custom flavor. '''
 
@@ -62,17 +88,37 @@ class PrefixDecorations( __.enum.IntFlag ):
     Emoji =     __.enum.auto( )
 
 
+class PrefixLabelPresentation( __.enum.IntFlag ):
+    ''' How prefix label should be presented. '''
+
+    Nothing =   0
+    Words =     __.enum.auto( )
+    Emoji =     __.enum.auto( )
+
+
 class PrefixFormatControl( metaclass = __.ImmutableCompleteDataclass ):
     ''' Format control for prefix emission. '''
 
-    decorations: __.typx.Annotated[
-        PrefixDecorations, __.typx.Doc( ''' Kinds of decoration to apply. ''' )
-    ] = PrefixDecorations.Color
+    # pylint: disable=invalid-field-call
+    colorize: __.typx.Annotated[
+        bool, __.typx.Doc( ''' Attempt to colorize? ''' )
+    ] = True
+    label_as: __.typx.Annotated[
+        PrefixLabelPresentation,
+        __.typx.Doc(
+            ''' How to present prefix label.
+
+                ``Words``: As words like ``TRACE0`` or ``ERROR``.
+                ``Emoji``: As emoji like ``🔎`` or ``❌``.
+
+                For both emoji and words: ``Emoji | Words``.
+            ''' )
+    ] = PrefixLabelPresentation.Words
     styles: __.typx.Annotated[
         __.AccretiveDictionary[ str, _Style ],
         __.typx.Doc(
             ''' Mapping of interpolant names to ``rich`` style objects. ''' ),
-    ] = __.AccretiveDictionary( )
+    ] = __.dcls.field( default_factory = __.AccretiveDictionary ) # pyright: ignore
     template: __.typx.Annotated[
         str,
         __.typx.Doc(
@@ -92,9 +138,42 @@ class PrefixFormatControl( metaclass = __.ImmutableCompleteDataclass ):
         __.typx.Doc(
             ''' String format for prefix timestamp.
 
-                Used by :py:func:`time.strftime`.
+                Used by :py:func:`time.strftime` or equivalent.
             ''' ),
     ] = '%Y-%m-%d %H:%M:%S.%f'
+    # pylint: enable=invalid-field-call
+
+
+ProduceModulecfgAuxiliariesArgument: __.typx.TypeAlias = __.typx.Annotated[
+    __.Absential[ Auxiliaries ],
+    __.typx.Doc( ''' Auxiliary functions for formatting. ''' ),
+]
+ProduceModulecfgColorizeArgument: __.typx.TypeAlias = __.typx.Annotated[
+    __.Absential[ bool ],
+    __.typx.Doc( ''' Attempt to colorize output prefixes? ''' ),
+]
+ProduceModulecfgConsoleFactoryArgument: __.typx.TypeAlias = __.typx.Annotated[
+    __.Absential[ __.typx.Callable[ [ ], _Console ] ],
+    __.typx.Doc(
+        ''' Factory function that produces Rich console instances. ''' ),
+]
+ProduceModulecfgPrefixLabelAsArgument: __.typx.TypeAlias = __.typx.Annotated[
+    __.Absential[ PrefixLabelPresentation ],
+    __.typx.Doc(
+        ''' How to present prefix labels (words, emoji, or both). ''' ),
+]
+ProduceModulecfgPrefixStylesArgument: __.typx.TypeAlias = __.typx.Annotated[
+    __.Absential[ __.cabc.Mapping[ str, _Style ] ],
+    __.typx.Doc( ''' Mapping of interpolant names to Rich style objects. ''' ),
+]
+ProduceModulecfgPrefixTemplateArgument: __.typx.TypeAlias = __.typx.Annotated[
+    __.Absential[ str ],
+    __.typx.Doc( ''' String template for prefix formatting. ''' ),
+]
+ProduceModulecfgPrefixTsFormatArgument: __.typx.TypeAlias = __.typx.Annotated[
+    __.Absential[ str ],
+    __.typx.Doc( ''' Timestamp format string for prefix. ''' ),
+]
 
 
 _flavor_specifications: __.ImmutableDictionary[
@@ -139,22 +218,38 @@ _trace_prefix_styles: tuple[ _Style, ... ] = tuple(
     _Style( color = name ) for name in _trace_color_names )
 
 
+def _produce_console( ) -> _Console: # pragma: no cover
+    # TODO? safe_box = True
+    # Ideally, we want TTY so that Rich can detect proper attributes.
+    # Failing that, stream to null device. (Output capture should still work.)
+    for stream in ( __.sys.stderr, __.sys.stdout ):
+        if not stream.isatty( ): continue
+        return _Console( stderr = stream is __.sys.stderr )
+    blackhole = open( # pylint: disable=consider-using-with
+        __.os.devnull, 'w', encoding = __.locale.getpreferredencoding( ) )
+    # TODO? height = 24, width = 80
+    return _Console( file = blackhole, force_terminal = True )
+
+
 @_validate_arguments
-def register_module(
-    name: __.RegisterModuleNameArgument = __.absent,
-    prefix_decorations: __.Absential[ PrefixDecorations ] = __.absent,
-    prefix_styles: __.Absential[ __.cabc.Mapping[ str, _Style ] ] = __.absent,
-    prefix_template: __.Absential[ str ] = __.absent,
-    prefix_ts_format: __.Absential[ str ] = __.absent,
-) -> None:
-    ''' Register a module with sundae-specific flavor configurations. '''
-    # TODO: Probe stderr and stdout for stream with TTY and use that.
-    #       Longer term, we may need to rearchitect trucks so that they can
-    #       provide target attributes (TTY, colorize, etc...) at runtime.
-    console = _Console( stderr = True )
+def produce_module_configuration( # pylint: disable=too-many-arguments,too-many-locals
+    colorize: ProduceModulecfgColorizeArgument = __.absent,
+    prefix_label_as: ProduceModulecfgPrefixLabelAsArgument = __.absent,
+    prefix_styles: ProduceModulecfgPrefixStylesArgument = __.absent,
+    prefix_template: ProduceModulecfgPrefixTemplateArgument = __.absent,
+    prefix_ts_format: ProduceModulecfgPrefixTsFormatArgument = __.absent,
+    console_factory: ProduceModulecfgConsoleFactoryArgument = __.absent,
+    auxiliaries: ProduceModulecfgAuxiliariesArgument = __.absent,
+) -> __.ModuleConfiguration:
+    ''' Produces module configuration with sundae-specific flavor settings. '''
+    if __.is_absent( console_factory ): console_factory = _produce_console
+    if __.is_absent( auxiliaries ): auxiliaries = Auxiliaries( )
+    console = console_factory( )
     prefix_fmtctl_initargs: dict[ str, __.typx.Any ] = { }
-    if not __.is_absent( prefix_decorations ):
-        prefix_fmtctl_initargs[ 'decorations' ] = prefix_decorations
+    if not __.is_absent( colorize ):
+        prefix_fmtctl_initargs[ 'colorize' ] = colorize
+    if not __.is_absent( prefix_label_as ):
+        prefix_fmtctl_initargs[ 'label_as' ] = prefix_label_as
     if not __.is_absent( prefix_styles ):
         prefix_fmtctl_initargs[ 'styles' ] = prefix_styles
     if not __.is_absent( prefix_template ):
@@ -162,17 +257,42 @@ def register_module(
     if not __.is_absent( prefix_ts_format ):
         prefix_fmtctl_initargs[ 'ts_format' ] = prefix_ts_format
     prefix_fmtctl = PrefixFormatControl( **prefix_fmtctl_initargs )
-    flavors = _produce_flavors( console, prefix_fmtctl )
-    __.register_module(
+    flavors = _produce_flavors( console, auxiliaries, prefix_fmtctl )
+    formatter_factory = _produce_formatter_factory( console, auxiliaries )
+    return __.ModuleConfiguration(
+        flavors = flavors, formatter_factory = formatter_factory )
+
+
+@_validate_arguments
+def register_module( # pylint: disable=too-many-arguments,too-many-locals
+    name: __.RegisterModuleNameArgument = __.absent,
+    colorize: ProduceModulecfgColorizeArgument = __.absent,
+    prefix_label_as: ProduceModulecfgPrefixLabelAsArgument = __.absent,
+    prefix_styles: ProduceModulecfgPrefixStylesArgument = __.absent,
+    prefix_template: ProduceModulecfgPrefixTemplateArgument = __.absent,
+    prefix_ts_format: ProduceModulecfgPrefixTsFormatArgument = __.absent,
+    console_factory: ProduceModulecfgConsoleFactoryArgument = __.absent,
+    auxiliaries: ProduceModulecfgAuxiliariesArgument = __.absent,
+) -> __.ModuleConfiguration:
+    ''' Registers module with sundae-specific flavor configurations. '''
+    configuration = produce_module_configuration(
+        colorize = colorize,
+        prefix_label_as = prefix_label_as,
+        prefix_styles = prefix_styles,
+        prefix_template = prefix_template,
+        prefix_ts_format = prefix_ts_format,
+        console_factory = console_factory,
+        auxiliaries = auxiliaries )
+    return __.register_module(
         name = name,
-        flavors = flavors,
-        formatter_factory = _produce_formatter_factory( console ) )
+        flavors = configuration.flavors,
+        formatter_factory = configuration.formatter_factory )
 
 
 def _produce_flavors(
-    console: _Console, control: PrefixFormatControl
+    console: _Console, auxiliaries: Auxiliaries, control: PrefixFormatControl
 ) -> __.FlavorsRegistry:
-    emitter = _produce_prefix_emitter( console, control )
+    emitter = _produce_prefix_emitter( console, auxiliaries, control )
     flavors: __.FlavorsRegistryLiberal = { }
     for name in _flavor_specifications.keys( ):
         flavors[ name ] = __.FlavorConfiguration( prefix_emitter = emitter )
@@ -183,7 +303,9 @@ def _produce_flavors(
     return __.ImmutableDictionary( flavors )
 
 
-def _produce_formatter_factory( console: _Console ) -> __.FormatterFactory:
+def _produce_formatter_factory(
+    console: _Console, auxiliaries: Auxiliaries
+) -> __.FormatterFactory:
 
     def factory(
         control: __.FormatterControl,
@@ -198,7 +320,7 @@ def _produce_formatter_factory( console: _Console ) -> __.FormatterFactory:
             if isinstance( flavor, str ):
                 flavor_ = _flavor_aliases.get( flavor, flavor )
                 spec = _flavor_specifications[ flavor_ ]
-                if spec.stack and __.sys.exc_info( )[ 0 ]:
+                if spec.stack and auxiliaries.exc_info_discoverer( )[ 0 ]:
                     with console.capture( ) as capture:
                         console.print_exception( )
                     tb_text = capture.get( )
@@ -215,50 +337,67 @@ def _produce_formatter_factory( console: _Console ) -> __.FormatterFactory:
 
 
 def _produce_prefix_emitter(
-    console: _Console, control: PrefixFormatControl
+    console: _Console, auxiliaries: Auxiliaries, control: PrefixFormatControl
 ) -> __.PrefixEmitter:
 
     def emitter( mname: str, flavor: __.Flavor ) -> str:
         if isinstance( flavor, int ):
-            return _produce_trace_prefix( console, control, mname, flavor )
+            return _produce_trace_prefix(
+                console, auxiliaries, control, mname, flavor )
         name = _flavor_aliases.get( flavor, flavor )
-        return _produce_special_prefix( console, control, mname, name )
+        return _produce_special_prefix(
+            console, auxiliaries, control, mname, name )
 
     return emitter
 
 
 def _produce_special_prefix(
-    console: _Console, control: PrefixFormatControl, mname: str, flavor: str
+    console: _Console,
+    auxiliaries: Auxiliaries,
+    control: PrefixFormatControl,
+    mname: str,
+    flavor: str,
 ) -> str:
-    use_color = control.decorations & PrefixDecorations.Color
-    use_emoji = control.decorations & PrefixDecorations.Emoji
     styles = dict( control.styles )
     spec = _flavor_specifications[ flavor ]
-    if use_emoji: label = f"{spec.emoji}"
-    else:
+    label = ''
+    if control.label_as & PrefixLabelPresentation.Emoji:
+        if control.label_as & PrefixLabelPresentation.Words:
+            label = f"{spec.emoji} {spec.label}"
+        else: label = f"{spec.emoji}"
+    elif control.label_as & PrefixLabelPresentation.Words:
         label = f"{spec.label}"
-        if use_color: styles[ 'flavor' ] = _Style( color = spec.color )
-    return _render_prefix( console, control, mname, label, styles )
+    if control.colorize: styles[ 'flavor' ] = _Style( color = spec.color )
+    return _render_prefix(
+        console, auxiliaries, control, mname, label, styles )
 
 
 def _produce_trace_prefix(
-    console: _Console, control: PrefixFormatControl, mname: str, level: int
+    console: _Console,
+    auxiliaries: Auxiliaries,
+    control: PrefixFormatControl,
+    mname: str,
+    level: int,
 ) -> str:
     # TODO? Option to render indentation guides.
-    use_color = control.decorations & PrefixDecorations.Color
-    use_emoji = control.decorations & PrefixDecorations.Emoji
     styles = dict( control.styles )
-    if use_emoji: label = '🔎'
-    else:
+    label = ''
+    if control.label_as & PrefixLabelPresentation.Emoji:
+        if control.label_as & PrefixLabelPresentation.Words:
+            label = f"🔎 TRACE{level}"
+        else: label = '🔎'
+    elif control.label_as & PrefixLabelPresentation.Words:
         label = f"TRACE{level}"
-        if use_color and level < len( _trace_color_names ):
-            styles[ 'flavor' ] =  _Style( color = _trace_color_names[ level ] )
+    if control.colorize and level < len( _trace_color_names ):
+        styles[ 'flavor' ] =  _Style( color = _trace_color_names[ level ] )
     indent = '  ' * level
-    return _render_prefix( console, control, mname, label, styles ) + indent
+    return _render_prefix(
+        console, auxiliaries, control, mname, label, styles ) + indent
 
 
-def _render_prefix(
+def _render_prefix( # pylint: disable=too-many-arguments
     console: _Console,
+    auxiliaries: Auxiliaries,
     control: PrefixFormatControl,
     mname: str,
     flavor: str,
@@ -266,17 +405,16 @@ def _render_prefix(
 ) -> str:
     # TODO? Performance optimization: Only compute and interpolate PID, thread,
     #       and timestamp, if capabilities set permits.
-    use_color = control.decorations & PrefixDecorations.Color
-    thread = __.threads.current_thread( )
+    thread = auxiliaries.thread_discoverer( )
     interpolants: dict[ str, str ] = {
         'flavor': flavor,
         'module_qname': mname,
-        'timestamp': __.time.strftime( control.ts_format ),
-        'process_id': str( __.os.getpid( ) ),
+        'timestamp': auxiliaries.time_formatter( control.ts_format ),
+        'process_id': str( auxiliaries.pid_discoverer( ) ),
         'thread_id': str( thread.ident ),
         'thread_name': thread.name,
     }
-    if use_color: _stylize_interpolants( console, interpolants, styles )
+    if control.colorize: _stylize_interpolants( console, interpolants, styles )
     return control.template.format( **interpolants )
 
 

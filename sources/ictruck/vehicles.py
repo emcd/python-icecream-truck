@@ -405,7 +405,7 @@ def register_module(
     formatter_factory: RegisterModuleFormatterFactoryArgument = __.absent,
     include_context: RegisterModuleIncludeContextArgument = __.absent,
     prefix_emitter: RegisterModulePrefixEmitterArgument = __.absent,
-) -> None:
+) -> _cfg.ModuleConfiguration:
     ''' Registers module configuration on the builtin truck.
 
         If no truck exists in builtins, installs one which produces null
@@ -433,7 +433,7 @@ def register_module(
     if not __.is_absent( prefix_emitter ):
         nomargs[ 'prefix_emitter' ] = prefix_emitter
     configuration = _cfg.ModuleConfiguration( **nomargs )
-    truck.register_module( name = name, configuration = configuration )
+    return truck.register_module( name = name, configuration = configuration )
 
 
 def active_flavors_from_environment(

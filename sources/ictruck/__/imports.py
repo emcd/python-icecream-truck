@@ -34,6 +34,7 @@ import functools as         funct
 import                      inspect
 import                      io
 import itertools as         itert
+import                      locale
 import                      os
 import                      sys
 import threading as         threads
@@ -56,3 +57,7 @@ from frigid.qaliases import (
 
 
 ComparisonResult: typx.TypeAlias = bool | types.NotImplementedType
+ExceptionInfo: typx.TypeAlias = tuple[
+    type[ BaseException ] | None,
+    BaseException | None,
+    types.TracebackType | None ]
