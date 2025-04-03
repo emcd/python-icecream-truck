@@ -20,8 +20,6 @@
 
 ''' Tests for vehicles module. '''
 
-# pylint: disable=unused-argument
-
 
 import functools as funct
 
@@ -204,7 +202,7 @@ def test_200_debugger_cache( configuration, vehicles, structured_capture ):
     module_include = st.one_of( st.none( ), st.booleans( ) ),
     flavor_include = st.one_of( st.none( ), st.booleans( ) ),
 )
-def test_300_include_context_inheritance( # pylint: disable=too-many-locals
+def test_300_include_context_inheritance(
     configuration, vehicles,
     vehicle_include, module_include, flavor_include,
 ):
@@ -243,7 +241,7 @@ def test_300_include_context_inheritance( # pylint: disable=too-many-locals
         ( 'V| ', 'M| ', 'vehicle', lambda mname, flavor: 'F| ', 'F| ' ),
     ),
 )
-def test_310_prefix_inheritance( # pylint: disable=too-many-arguments,too-many-locals
+def test_310_prefix_inheritance(
     configuration, vehicles, structured_capture,
     vehicle_prefix, module_prefix, flavor_on, flavor_prefix,
     expected,
@@ -290,7 +288,7 @@ def test_310_prefix_inheritance( # pylint: disable=too-many-arguments,too-many-l
         ( 'p.q', { }, { }, 'TRACE0| ' ),
     ],
 )
-def test_350_module_hierarchy( # pylint: disable=too-many-arguments,too-many-locals
+def test_350_module_hierarchy(
     configuration, vehicles,
     module_name, parent_modules, flavor_overrides, expected_prefix,
 ):
@@ -551,8 +549,8 @@ def test_620_register_module_auto_create( vehicles, clean_builtins ):
     if 'ictr' in builtins.__dict__: del builtins.__dict__[ 'ictr' ]
     vehicles.register_module( )
     assert 'ictr' in builtins.__dict__
-    assert isinstance( builtins.ictr, vehicles.Truck ) # pylint: disable=no-member
-    assert builtins.ictr.printer_factory( 'm', 'f' )( None ) is None # pylint: disable=no-member
+    assert isinstance( builtins.ictr, vehicles.Truck )
+    assert builtins.ictr.printer_factory( 'm', 'f' )( None ) is None
 
 
 def test_630_register_module_absent_args(
@@ -566,7 +564,7 @@ def test_630_register_module_absent_args(
         truck.modulecfgs[ __name__ ], configuration.ModuleConfiguration )
 
 
-def test_640_register_module_full_config( # pylint: disable=too-many-locals
+def test_640_register_module_full_config(
     vehicles, configuration, clean_builtins, simple_output, monkeypatch
 ):
     ''' Register module with all arguments configured. '''

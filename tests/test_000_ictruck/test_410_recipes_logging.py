@@ -20,8 +20,6 @@
 
 ''' Tests for recipes module. '''
 
-# pylint: disable=unused-argument
-
 
 import logging
 

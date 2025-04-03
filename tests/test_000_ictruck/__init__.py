@@ -66,4 +66,4 @@ PACKAGES_NAMES_BY_MODULE_QNAME = DictionaryProxy( {
 MODULES_QNAMES = tuple( PACKAGES_NAMES_BY_MODULE_QNAME.keys( ) )
 MODULES_NAMES_BY_MODULE_QNAME = DictionaryProxy( {
     name: name.rsplit( '.', maxsplit = 1 )[ -1 ]
-    for name in PACKAGES_NAMES_BY_MODULE_QNAME.keys( ) } )
+    for name in PACKAGES_NAMES_BY_MODULE_QNAME } )

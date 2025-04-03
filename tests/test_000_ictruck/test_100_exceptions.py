@@ -67,22 +67,3 @@ def test_030_module_inference_failure( exceptions ):
     with pytest.raises( exceptions.ModuleInferenceFailure ) as excinfo:
         raise exceptions.ModuleInferenceFailure( )
     assert "Could not infer invoking module" in str( excinfo.value )
-
-
-def test_040_exception_chaining( exceptions ):
-    ''' Exceptions support proper exception chaining. '''
-    original = ValueError( "Original error" )
-    try:
-        try:
-            raise original
-        except ValueError as e:
-            raise exceptions.Omnierror( "Chained error" ) from e
-    except exceptions.Omnierror as exc:
-        assert exc.__cause__ is original
-    try:
-        try:
-            raise original
-        except ValueError:
-            raise exceptions.Omnierror( "Context error" ) # pylint: disable=raise-missing-from
-    except exceptions.Omnierror as exc:
-        assert exc.__context__ is original

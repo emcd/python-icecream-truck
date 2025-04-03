@@ -99,7 +99,6 @@ class PrefixLabelPresentation( __.enum.IntFlag ):
 class PrefixFormatControl( metaclass = __.ImmutableCompleteDataclass ):
     ''' Format control for prefix emission. '''
 
-    # pylint: disable=invalid-field-call
     colorize: __.typx.Annotated[
         bool, __.typx.Doc( ''' Attempt to colorize? ''' )
     ] = True
@@ -141,7 +140,6 @@ class PrefixFormatControl( metaclass = __.ImmutableCompleteDataclass ):
                 Used by :py:func:`time.strftime` or equivalent.
             ''' ),
     ] = '%Y-%m-%d %H:%M:%S.%f'
-    # pylint: enable=invalid-field-call
 
 
 ProduceModulecfgAuxiliariesArgument: __.typx.TypeAlias = __.typx.Annotated[
@@ -225,14 +223,14 @@ def _produce_console( ) -> _Console: # pragma: no cover
     for stream in ( __.sys.stderr, __.sys.stdout ):
         if not stream.isatty( ): continue
         return _Console( stderr = stream is __.sys.stderr )
-    blackhole = open( # pylint: disable=consider-using-with
+    blackhole = open( # noqa: SIM115
         __.os.devnull, 'w', encoding = __.locale.getpreferredencoding( ) )
     # TODO? height = 24, width = 80
     return _Console( file = blackhole, force_terminal = True )
 
 
 @_validate_arguments
-def produce_module_configuration( # pylint: disable=too-many-arguments,too-many-locals
+def produce_module_configuration( # noqa: PLR0913
     colorize: ProduceModulecfgColorizeArgument = __.absent,
     prefix_label_as: ProduceModulecfgPrefixLabelAsArgument = __.absent,
     prefix_styles: ProduceModulecfgPrefixStylesArgument = __.absent,
@@ -264,7 +262,7 @@ def produce_module_configuration( # pylint: disable=too-many-arguments,too-many-
 
 
 @_validate_arguments
-def register_module( # pylint: disable=too-many-arguments,too-many-locals
+def register_module( # noqa: PLR0913
     name: __.RegisterModuleNameArgument = __.absent,
     colorize: ProduceModulecfgColorizeArgument = __.absent,
     prefix_label_as: ProduceModulecfgPrefixLabelAsArgument = __.absent,
@@ -294,7 +292,7 @@ def _produce_flavors(
 ) -> __.FlavorsRegistry:
     emitter = _produce_prefix_emitter( console, auxiliaries, control )
     flavors: __.FlavorsRegistryLiberal = { }
-    for name in _flavor_specifications.keys( ):
+    for name in _flavor_specifications:
         flavors[ name ] = __.FlavorConfiguration( prefix_emitter = emitter )
     for alias, name in _flavor_aliases.items( ):
         flavors[ alias ] = flavors[ name ]
@@ -308,11 +306,7 @@ def _produce_formatter_factory(
 ) -> __.FormatterFactory:
 
     def factory(
-        control: __.FormatterControl,
-        # pylint: disable=unused-argument
-        mname: str,
-        flavor: __.Flavor,
-        # pylint: enable=unused-argument
+        control: __.FormatterControl, mname: str, flavor: __.Flavor
     ) -> __.Formatter:
 
         def formatter( value: __.typx.Any ) -> str:
@@ -395,7 +389,7 @@ def _produce_trace_prefix(
         console, auxiliaries, control, mname, label, styles ) + indent
 
 
-def _render_prefix( # pylint: disable=too-many-arguments
+def _render_prefix( # noqa: PLR0913
     console: _Console,
     auxiliaries: Auxiliaries,
     control: PrefixFormatControl,

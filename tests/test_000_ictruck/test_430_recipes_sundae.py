@@ -19,8 +19,7 @@
 
 ''' Tests for sundae recipes module. '''
 
-# pylint: disable=line-too-long,too-many-arguments,too-many-locals
-# pylint: disable=unused-argument
+# ruff: noqa: E501,RUF001
 
 import pytest
 from rich.style import Style
@@ -130,8 +129,8 @@ def test_011_flavor_aliases( recipes ):
 
 @pytest.mark.parametrize( "label_as,flavor,expected_prefix,expected_style", [
     ( 'Words', 'note', 'NOTE| ', 'blue' ),
-    ( 'Emoji', 'note', 'ℹ️| ', None ),
-    ( 'Words|Emoji', 'note', 'ℹ️ NOTE| ', 'blue' ),
+    ( 'Emoji', 'note', '\N{Information Source}\ufe0f| ', None ),
+    ( 'Words|Emoji', 'note', '\N{Information Source}\ufe0f NOTE| ', 'blue' ),
     ( 'Words', 'errorx', 'ERROR| ', 'red' ),
     ( 'Emoji', 'errorx', '❌| ', None ),
     ( 'Words|Emoji', 'errorx', '❌ ERROR| ', 'red' ),

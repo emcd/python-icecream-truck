@@ -21,7 +21,6 @@
 ''' Common imports used by recipes. '''
 
 # ruff: noqa: F401,F403,F405
-# pylint: disable=unused-import,wildcard-import
 
 
 from __future__ import annotations

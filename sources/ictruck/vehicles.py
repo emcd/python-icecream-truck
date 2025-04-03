@@ -37,10 +37,8 @@ from . import configuration as _cfg
 from . import exceptions as _exceptions
 
 
-# pylint: disable=import-error,import-private-name
 if __.typx.TYPE_CHECKING: # pragma: no cover
     import _typeshed
-# pylint: enable=import-error,import-private-name
 
 
 _installer_lock: __.threads.Lock = __.threads.Lock( )
@@ -58,11 +56,7 @@ builtins_alias_default: __.typx.Annotated[
 
 @_validate_arguments
 def produce_simple_printer(
-    target: __.io.TextIOBase,
-    # pylint: disable=unused-argument
-    mname: str,
-    flavor: _cfg.Flavor,
-    # pylint: enable=unused-argument
+    target: __.io.TextIOBase, mname: str, flavor: _cfg.Flavor
 ) -> Printer:
     ''' Produces printer which uses standard Python 'print'. '''
     return __.funct.partial( _simple_print, target = target )
@@ -71,7 +65,6 @@ def produce_simple_printer(
 class Truck( metaclass = __.ImmutableCompleteDataclass ):
     ''' Vends flavors of Icecream debugger. '''
 
-    # pylint: disable=invalid-field-call
     active_flavors: __.typx.Annotated[
         ActiveFlavorsRegistry,
         __.typx.Doc(
@@ -131,16 +124,15 @@ class Truck( metaclass = __.ImmutableCompleteDataclass ):
         __.threads.Lock,
         __.typx.Doc( ''' Access lock for cache of debugger instances. ''' ),
     ] = __.dcls.field( default_factory = __.threads.Lock )
-    # pylint: enable=invalid-field-call
 
     @_validate_arguments
     def __call__( self, flavor: _cfg.Flavor ) -> _icecream.IceCreamDebugger:
         ''' Vends flavor of Icecream debugger. '''
         mname = _discover_invoker_module_name( )
         cache_index = ( mname, flavor )
-        if cache_index in self._debuggers: # pylint: disable=unsupported-membership-test
-            with self._debuggers_lock: # pylint: disable=not-context-manager
-                return self._debuggers[ cache_index ] # pylint: disable=unsubscriptable-object
+        if cache_index in self._debuggers:
+            with self._debuggers_lock:
+                return self._debuggers[ cache_index ]
         configuration = _produce_ic_configuration( self, mname, flavor )
         control = _cfg.FormatterControl( )
         initargs = _calculate_ic_initargs(
@@ -154,8 +146,8 @@ class Truck( metaclass = __.ImmutableCompleteDataclass ):
             active_flavors = (
                 _calculate_effective_flavors( self.active_flavors, mname ) )
             debugger.enabled = flavor in active_flavors
-        with self._debuggers_lock: # pylint: disable=not-context-manager
-            self._debuggers[ cache_index ] = debugger # pylint: disable=unsupported-assignment-operation
+        with self._debuggers_lock:
+            self._debuggers[ cache_index ] = debugger
         return debugger
 
     @_validate_arguments
@@ -195,7 +187,7 @@ class Truck( metaclass = __.ImmutableCompleteDataclass ):
             name = _discover_invoker_module_name( )
         if __.is_absent( configuration ):
             configuration = _cfg.ModuleConfiguration( )
-        self.modulecfgs[ name ] = configuration # pylint: disable=unsupported-assignment-operation
+        self.modulecfgs[ name ] = configuration
         return self
 
 
@@ -331,7 +323,7 @@ RegisterModulePrefixEmitterArgument: __.typx.TypeAlias = __.typx.Annotated[
 
 
 @_validate_arguments
-def install( # pylint: disable=too-many-arguments
+def install( # noqa: PLR0913
     alias: InstallAliasArgument = builtins_alias_default,
     active_flavors: ProduceTruckActiveFlavorsArgument = __.absent,
     generalcfg: ProduceTruckGeneralcfgArgument = __.absent,
@@ -357,7 +349,7 @@ def install( # pylint: disable=too-many-arguments
 
 
 @_validate_arguments
-def produce_truck( # pylint: disable=too-many-arguments
+def produce_truck( # noqa: PLR0913
     active_flavors: ProduceTruckActiveFlavorsArgument = __.absent,
     generalcfg: ProduceTruckGeneralcfgArgument = __.absent,
     printer_factory: ProduceTruckPrinterFactoryArgument = __.absent,
@@ -441,12 +433,11 @@ def active_flavors_from_environment(
 ) -> ActiveFlavorsRegistry:
     ''' Extracts active flavors from named environment variable. '''
     active_flavors: ActiveFlavorsRegistryLiberal = { }
-    if __.is_absent( evname ): name = 'ICTRUCK_ACTIVE_FLAVORS'
-    else: name = evname
+    name = 'ICTRUCK_ACTIVE_FLAVORS' if __.is_absent( evname ) else evname
     value = __.os.getenv( name, '' )
     for part in value.split( '+' ):
         if not part: continue
-        if ':' in part: # pylint: disable=magic-value-comparison
+        if ':' in part:
             mname, flavors = part.split( ':', 1 )
             active_flavors[ mname ] = flavors.split( ',' )
         else: active_flavors[ None ] = part.split( ',' )
@@ -460,12 +451,11 @@ def trace_levels_from_environment(
 ) -> TraceLevelsRegistry:
     ''' Extracts trace levels from named environment variable. '''
     trace_levels: TraceLevelsRegistryLiberal = { None: -1 }
-    if __.is_absent( evname ): name = 'ICTRUCK_TRACE_LEVELS'
-    else: name = evname
+    name = 'ICTRUCK_TRACE_LEVELS' if __.is_absent( evname ) else evname
     value = __.os.getenv( name, '' )
     for part in value.split( '+' ):
         if not part: continue
-        if ':' in part: # pylint: disable=magic-value-comparison
+        if ':' in part:
             mname, level = part.split( ':', 1 )
             if not level.isdigit( ): continue # TODO: warn
             trace_levels[ mname ] = int( level )
@@ -523,7 +513,7 @@ def _calculate_ic_initargs(
     nomargs[ 'includeContext' ] = configuration[ 'include_context' ]
     if isinstance( truck.printer_factory, __.io.TextIOBase ):
         printer = __.funct.partial( print, file = truck.printer_factory )
-    else: printer = truck.printer_factory( mname, flavor ) # pylint: disable=not-callable
+    else: printer = truck.printer_factory( mname, flavor )
     nomargs[ 'outputFunction' ] = printer
     prefix_emitter = configuration[ 'prefix_emitter' ]
     nomargs[ 'prefix' ] = (
@@ -545,11 +535,9 @@ def _discover_invoker_module_name( ) -> str:
     while frame: # pragma: no branch
         module = __.inspect.getmodule( frame )
         if module is None:
-            # pylint: disable=magic-value-comparison
             if '<stdin>' == frame.f_code.co_filename: # pragma: no cover
                 name = '__main__'
                 break
-            # pylint: enable=magic-value-comparison
             raise _exceptions.ModuleInferenceFailure
         name = module.__name__
         if not name.startswith( f"{__package__}." ): break

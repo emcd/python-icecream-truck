@@ -76,7 +76,7 @@ ProduceTruckStderrArgument: __.typx.TypeAlias = __.typx.Annotated[
 
 
 @_validate_arguments
-def install( # pylint: disable=too-many-arguments
+def install( # noqa: PLR0913
     alias: __.InstallAliasArgument = __.builtins_alias_default,
     flavors: __.ProduceTruckFlavorsArgument = __.absent,
     active_flavors: __.ProduceTruckActiveFlavorsArgument = __.absent,
@@ -102,11 +102,9 @@ def install( # pylint: disable=too-many-arguments
 @_validate_arguments
 def produce_console_formatter(
     console: _Console,
-    # pylint: disable=unused-argument
     control: __.FormatterControl,
     mname: str,
     flavor: int | str,
-    # pylint: enable=unused-argument
 ) -> __.Formatter:
     ''' Produces formatter which uses Rich highlighter and prettier. '''
     return __.funct.partial( _console_format, console )
@@ -114,11 +112,7 @@ def produce_console_formatter(
 
 @_validate_arguments
 def produce_console_printer(
-    console: _Console,
-    # pylint: disable=unused-argument
-    mname: str,
-    flavor: __.Flavor,
-    # pylint: enable=unused-argument
+    console: _Console, mname: str, flavor: __.Flavor
 ) -> __.Printer:
     ''' Produces a printer that uses Rich console printing.
 
@@ -133,11 +127,7 @@ def produce_console_printer(
 
 @_validate_arguments
 def produce_pretty_formatter(
-    # pylint: disable=unused-argument
-    control: __.FormatterControl,
-    mname: str,
-    flavor: int | str,
-    # pylint: enable=unused-argument
+    control: __.FormatterControl, mname: str, flavor: int | str
 ) -> __.Formatter:
     ''' Produces formatter which uses Rich prettier. '''
     return _pretty_repr

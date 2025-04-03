@@ -20,8 +20,6 @@
 
 ''' Tests for rich recipes module. '''
 
-# pylint: disable=unused-argument
-
 
 import sys
 
@@ -133,7 +131,7 @@ def test_102_produce_truck_printer_mode(
     assert '\n' in output
 
 
-def test_103_produce_truck_active_flavors( # pylint: disable=too-many-arguments,too-many-locals
+def test_103_produce_truck_active_flavors(
     recipes, base, configuration, vehicles, simple_output, monkeypatch
 ):
     ''' Truck factory respects active flavors in Formatter mode. '''
@@ -200,7 +198,7 @@ def test_202_install_truck_trace_levels(
     assert "Trace 2" not in output
 
 
-def test_300_register_module( # pylint: disable=too-many-arguments
+def test_300_register_module(
     recipes, configuration, vehicles,
     simple_output, clean_builtins, monkeypatch,
 ):
