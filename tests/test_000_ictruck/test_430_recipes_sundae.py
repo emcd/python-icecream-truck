@@ -37,7 +37,8 @@ class FakeConsole:
         import os
         blackhole = open( # noqa: SIM115
             os.devnull, 'w', encoding = locale.getpreferredencoding( ) )
-        self.console = Console( file = blackhole )
+        # Explict 'no_color' needed on Windows.
+        self.console = Console( file = blackhole, no_color = True )
         self.print_calls = [ ]
 
     def print( self, text, style = None, end = '\n' ):
