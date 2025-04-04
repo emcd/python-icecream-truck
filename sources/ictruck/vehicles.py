@@ -66,7 +66,7 @@ def produce_simple_printer(
         case 'win32':
             winansi = _colorama.AnsiToWin32( target ) # pyright: ignore
             target_ = ( # pragma: no cover
-                winansi.stream if winansi.should_wrap( ) else target )
+                winansi.stream if winansi.convert else target )
         case _: target_ = target
     return __.funct.partial(
         _simple_print,
@@ -589,7 +589,7 @@ def _produce_ic_configuration(
 
 def _remove_ansi_c1_sequences( text: str ) -> str:
     # https://stackoverflow.com/a/14693789/14833542
-    regex = __.re.compile( r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])' )
+    regex = __.re.compile( r'''\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])''' )
     return regex.sub( '', text )
 
 
