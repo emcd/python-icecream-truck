@@ -320,7 +320,7 @@ def _produce_formatter_factory(
                     tb_text = capture.get( )
             else: flavor_ = flavor
             with console.capture( ) as capture:
-                console.print( value )
+                console.print( value, end = '' )
             text = capture.get( )
             if tb_text: return f"{tb_text}\n{text}"
             return text
@@ -383,7 +383,7 @@ def _produce_trace_prefix(
     elif control.label_as & PrefixLabelPresentation.Words:
         label = f"TRACE{level}"
     if control.colorize and level < len( _trace_color_names ):
-        styles[ 'flavor' ] =  _Style( color = _trace_color_names[ level ] )
+        styles[ 'flavor' ] = _Style( color = _trace_color_names[ level ] )
     indent = '  ' * level
     return _render_prefix(
         console, auxiliaries, control, mname, label, styles ) + indent
@@ -421,7 +421,7 @@ def _stylize_interpolants(
     interpolants_: dict[ str, str ] = { }
     for iname, ivalue in interpolants.items( ):
         style = styles.get( iname, style_default )
-        if not style: continue
+        if not style: continue # pragma: no branch
         with console.capture( ) as capture:
             console.print( ivalue, style = style, end = '' )
         interpolants_[ iname ] = capture.get( )
