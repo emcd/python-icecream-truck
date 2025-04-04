@@ -56,10 +56,22 @@ builtins_alias_default: __.typx.Annotated[
 
 @_validate_arguments
 def produce_simple_printer(
-    target: __.io.TextIOBase, mname: str, flavor: _cfg.Flavor
+    target: __.io.TextIOBase,
+    mname: str,
+    flavor: _cfg.Flavor,
+    force_color: bool = False,
 ) -> Printer:
     ''' Produces printer which uses standard Python 'print'. '''
-    return __.funct.partial( _simple_print, target = target )
+    match __.sys.platform:
+        case 'win32':
+            winansi = _colorama.AnsiToWin32( target ) # pyright: ignore
+            target_ = ( # pragma: no cover
+                winansi.stream if winansi.should_wrap( ) else target )
+        case _: target_ = target
+    return __.funct.partial(
+        _simple_print,
+        target = target_, # pyright: ignore
+        force_color = force_color )
 
 
 class Truck( metaclass = __.ImmutableCompleteDataclass ):
@@ -465,21 +477,6 @@ def trace_levels_from_environment(
     return __.ImmutableDictionary( trace_levels )
 
 
-@__.ctxl.contextmanager
-def windows_replace_ansi_sgr( ) -> __.typx.Generator[ None, None, None ]:
-    ''' Converts ANSI SGR sequences to Windows API calls as necessary.
-
-        Necessary on some older command terminals.
-
-        If not necessary, rendering occurs normally. (I.e., sequences are
-        passed to the terminal.)
-    '''
-    # Note: Copied from the 'icecream' sources.
-    _colorama.init( )
-    yield
-    _colorama.deinit( )
-
-
 def _calculate_effective_flavors(
     flavors: ActiveFlavorsRegistry, mname: str
 ) -> ActiveFlavors:
@@ -590,7 +587,16 @@ def _produce_ic_configuration(
     return __.ImmutableDictionary( configd )
 
 
-def _simple_print( text: str, target: __.io.TextIOBase ) -> None:
-    # TODO: If target is not associated with TTY, then strip ANSI SGR.
-    with windows_replace_ansi_sgr( ):
-        print( text, file = target )
+def _remove_ansi_c1_sequences( text: str ) -> str:
+    # https://stackoverflow.com/a/14693789/14833542
+    regex = __.re.compile( r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])' )
+    return regex.sub( '', text )
+
+
+def _simple_print(
+    text: str, target: __.io.TextIOBase, force_color = False
+) -> None:
+    if not force_color and not target.isatty( ):
+        print( _remove_ansi_c1_sequences( text ), file = target )
+        return
+    print( text, file = target )

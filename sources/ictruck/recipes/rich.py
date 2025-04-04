@@ -114,6 +114,7 @@ def produce_console_formatter(
 def produce_console_printer(
     console: _Console, mname: str, flavor: __.Flavor
 ) -> __.Printer:
+    # TODO: Remove from recipe. Should always use simple printer.
     ''' Produces a printer that uses Rich console printing.
 
         .. note::
@@ -122,7 +123,7 @@ def produce_console_printer(
             causing visual artifacts. Be careful to use this only with "safe"
             formatters.
     '''
-    return __.funct.partial( _console_print, console )
+    return console.print
 
 
 @_validate_arguments
@@ -176,12 +177,6 @@ def _console_format( console: _Console, value: __.typx.Any ) -> str:
     with console.capture( ) as capture:
         console.print( value )
     return capture.get( )
-
-
-def _console_print( console: _Console, text: str ) -> None:
-    with __.windows_replace_ansi_sgr( ):
-        # console.print( text, markup = False )
-        console.print( text )
 
 
 def _produce_formatter_truck(

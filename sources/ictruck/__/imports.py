@@ -35,6 +35,7 @@ import                      io
 import itertools as         itert
 import                      locale
 import                      os
+import                      re
 import                      sys
 import threading as         threads
 import                      time

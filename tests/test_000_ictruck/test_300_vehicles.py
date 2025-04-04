@@ -73,11 +73,22 @@ def mock_env( monkeypatch ):
 
 
 def test_010_simple_printer_output( vehicles, simple_output ):
-    ''' Simple printer outputs text to target stream. '''
+    ''' Simple printer outputs text to target stream without ANSI colors. '''
     printer = vehicles.produce_simple_printer( simple_output, 'test', 1 )
-    text = "Test output"
+    text_core = "Test output"
+    text = f"\x1b[33m{text_core}\x1b[0m"
     printer( text )
-    assert simple_output.getvalue( ) == "Test output\n"
+    assert simple_output.getvalue( ) == f"{text_core}\n"
+
+
+def test_011_simple_printer_color_output( vehicles, simple_output ):
+    ''' Simple printer outputs text to target stream with ANSI colors. '''
+    printer = (
+        vehicles.produce_simple_printer(
+            simple_output, 'test', 1, force_color = True ) )
+    text = "\x1b[33mTest output\x1b[0m"
+    printer( text )
+    assert simple_output.getvalue( ) == f"{text}\n"
 
 
 def test_111_invalid_flavor_type( configuration, exceptions, vehicles ):
