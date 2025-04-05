@@ -42,7 +42,7 @@ class FakeConsole:
         self.console = Console( file = blackhole  )
         self.print_calls = [ ]
 
-    def print( self, text, style = None, end = '\n' ):
+    def print( self, text, end = '\n', highlight = None, style = None ):
         self.print_calls.append( ( text, style ) )
         self.console.print( text, style = style, end = end )
 

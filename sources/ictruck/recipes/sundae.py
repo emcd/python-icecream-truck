@@ -322,7 +322,7 @@ def _produce_formatter_factory(
             with console.capture( ) as capture:
                 console.print( value, end = '' )
             text = capture.get( )
-            if tb_text: return f"{tb_text}\n{text}"
+            if tb_text: return f"\n{tb_text}\n{text}"
             return text
 
         return formatter
@@ -423,6 +423,7 @@ def _stylize_interpolants(
         style = styles.get( iname, style_default )
         if not style: continue # pragma: no branch
         with console.capture( ) as capture:
-            console.print( ivalue, style = style, end = '' )
+            console.print(
+                ivalue, end = '', highlight = False, style = style  )
         interpolants_[ iname ] = capture.get( )
     interpolants.update( interpolants_ )
