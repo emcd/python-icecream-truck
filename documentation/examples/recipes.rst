@@ -55,3 +55,31 @@ your terminal colors and width):
    :alt: Rich Recipe Terminal Screen Capture
    :width: 800
    :align: center
+
+
+The Icecream Sundae
+-------------------------------------------------------------------------------
+
+(Example courtesy of xAI grok-3.)
+
+.. literalinclude:: ../../examples/sundae/__main__.py
+   :language: python
+
+You can set the ``ICTRUCK_TRACE_LEVELS`` environment variable to various trace
+depths to determine how detailed the debug output is. Running this will result
+in the following (or something similar, depending on your terminal colors and
+width and some randomness):
+
+(With ``ICTRUCK_TRACE_LEVELS=2``.)
+
+.. image:: recipe-sundae-termcap-1.png
+   :alt: Sundae Recipe Terminal Screen Capture 1
+   :width: 800
+   :align: center
+
+(Without ``ICTRUCK_TRACE_LEVELS`` set.)
+
+.. image:: recipe-sundae-termcap-2.png
+   :alt: Sundae Recipe Terminal Screen Capture 2
+   :width: 800
+   :align: center
