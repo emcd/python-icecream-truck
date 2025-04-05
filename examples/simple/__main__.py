@@ -5,18 +5,13 @@
 
 import functools
 import operator
-import os
 
 import ictruck
 
 
 def main( ):
-    # Get trace depth from environment, if available.
-    # Else, set a reasonable default.
-    depth = int( os.environ.get( 'ICTRUCK_TRACE_LEVELS', 2 ) )
-
     # Add 'ictr' to Python builtins.
-    ictruck.install( trace_levels = depth )
+    ictruck.install( )
 
     # Indicate that tracing has been enabled.
     # If we had simply done 'ictruck.install( )', it would be inactive,

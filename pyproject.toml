@@ -131,7 +131,7 @@ docsgen = [
      documentation .auxiliary/artifacts/sphinx-html''',
 ]
 linters = [
-  '''ruff check --quiet sources documentation tests''',
+  '''ruff check --quiet sources documentation tests examples''',
   # --- BEGIN: Injected by Copier ---
   # --- END: Injected by Copier ---
   '''pyright sources''',
