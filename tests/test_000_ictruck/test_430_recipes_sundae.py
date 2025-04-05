@@ -162,10 +162,10 @@ def test_020_produce_special_prefix(
 ):
     ''' Special prefixes are produced with different label presentations. '''
     if '|' in label_as:
-        presentation = recipes.PrefixLabelPresentation( 0 )
+        presentation = recipes.PrefixLabelPresentations( 0 )
         for name in label_as.split( '|' ):
-            presentation |= getattr( recipes.PrefixLabelPresentation, name )
-    else: presentation = getattr( recipes.PrefixLabelPresentation, label_as )
+            presentation |= getattr( recipes.PrefixLabelPresentations, name )
+    else: presentation = getattr( recipes.PrefixLabelPresentations, label_as )
     control = recipes.PrefixFormatControl(
         colorize = True, label_as = presentation )
     prefix = _strip_ansi_c1( recipes._produce_special_prefix(
@@ -193,10 +193,10 @@ def test_021_produce_trace_prefix(
 ):
     ''' Level prefixes are produced with different label presentations. '''
     if '|' in label_as:
-        presentation = recipes.PrefixLabelPresentation( 0 )
+        presentation = recipes.PrefixLabelPresentations( 0 )
         for name in label_as.split( '|' ):
-            presentation |= getattr( recipes.PrefixLabelPresentation, name )
-    else: presentation = getattr( recipes.PrefixLabelPresentation, label_as )
+            presentation |= getattr( recipes.PrefixLabelPresentations, name )
+    else: presentation = getattr( recipes.PrefixLabelPresentations, label_as )
     control = recipes.PrefixFormatControl(
         colorize = True, label_as = presentation )
     prefix = _strip_ansi_c1( recipes._produce_trace_prefix(
@@ -240,7 +240,7 @@ def test_023_produce_prefix_emitter_special_flavors(
 ):
     ''' Prefix emitters for special flavors work correctly. '''
     control = recipes.PrefixFormatControl(
-        colorize = False, label_as = recipes.PrefixLabelPresentation.Words )
+        colorize = False, label_as = recipes.PrefixLabelPresentations.Words )
     emitter = recipes._produce_prefix_emitter(
         test_console, fake_auxiliaries, control )
     prefix = emitter( 'test_module', flavor )
@@ -257,7 +257,7 @@ def test_024_produce_prefix_emitter_trace_levels(
 ):
     ''' Prefix emitters for trace levels work correctly. '''
     control = recipes.PrefixFormatControl(
-        colorize = False, label_as = recipes.PrefixLabelPresentation.Words )
+        colorize = False, label_as = recipes.PrefixLabelPresentations.Words )
     emitter = recipes._produce_prefix_emitter(
         test_console, fake_auxiliaries, control )
     prefix = emitter( 'test_module', level )
@@ -270,7 +270,7 @@ def test_025_render_prefix_interpolants(
     ''' Prefix emitter handles all available interpolants. '''
     control = recipes.PrefixFormatControl(
         colorize = False,
-        label_as = recipes.PrefixLabelPresentation.Words,
+        label_as = recipes.PrefixLabelPresentations.Words,
         template = (
             "{timestamp} [{module_qname}] {flavor} "
             "(pid:{process_id}, tid:{thread_id}, tname:{thread_name})| " ) )
@@ -287,7 +287,7 @@ def test_026_render_prefix_ts_format(
     ''' Prefix emitter handles custom timestamp format. '''
     control = recipes.PrefixFormatControl(
         colorize = False,
-        label_as = recipes.PrefixLabelPresentation.Words,
+        label_as = recipes.PrefixLabelPresentations.Words,
         template = "{timestamp} {flavor}| ",
         ts_format = '%H:%M:%S' )
     prefix = recipes._render_prefix(
@@ -352,7 +352,7 @@ def test_100_register_module(
         active_flavors = { 'note' }, printer_factory = printer_factory )
     recipes.register_module(
         colorize = False,
-        prefix_label_as = recipes.PrefixLabelPresentation.Words,
+        prefix_label_as = recipes.PrefixLabelPresentations.Words,
         console_factory = lambda: test_console,
         auxiliaries = fake_auxiliaries )
     debugger = truck( 'note' )
@@ -372,7 +372,7 @@ def test_101_register_module_colorize_default(
         active_flavors = { 'note' }, printer_factory = printer_factory )
     recipes.register_module(
         # colorize is absent, should default to True
-        prefix_label_as = recipes.PrefixLabelPresentation.Words,
+        prefix_label_as = recipes.PrefixLabelPresentations.Words,
         console_factory = lambda: test_console,
         auxiliaries = fake_auxiliaries )
     debugger = truck( 'note' )
@@ -419,7 +419,7 @@ def test_103_register_module_custom_styles(
         active_flavors = { 'note' }, printer_factory = printer_factory )
     recipes.register_module(
         colorize = True,
-        prefix_label_as = recipes.PrefixLabelPresentation.Words,
+        prefix_label_as = recipes.PrefixLabelPresentations.Words,
         prefix_styles = custom_styles,
         console_factory = lambda: test_console,
         auxiliaries = fake_auxiliaries )
@@ -447,7 +447,7 @@ def test_104_register_module_custom_template(
         active_flavors = { 'note' }, printer_factory = printer_factory )
     recipes.register_module(
         colorize = False,
-        prefix_label_as = recipes.PrefixLabelPresentation.Words,
+        prefix_label_as = recipes.PrefixLabelPresentations.Words,
         prefix_template = custom_template,
         console_factory = lambda: test_console,
         auxiliaries = fake_auxiliaries )
@@ -470,7 +470,7 @@ def test_105_register_module_custom_ts_format(
         active_flavors = { 'note' }, printer_factory = printer_factory )
     recipes.register_module(
         colorize = False,
-        prefix_label_as = recipes.PrefixLabelPresentation.Words,
+        prefix_label_as = recipes.PrefixLabelPresentations.Words,
         prefix_template = "{timestamp} {flavor}| ",
         prefix_ts_format = "%H:%M:%S",
         console_factory = lambda: test_console,
@@ -490,7 +490,7 @@ def test_200_invalid_prefix_template(
     ''' Invalid prefix template raises exception. '''
     control = recipes.PrefixFormatControl(
         colorize = False,
-        label_as = recipes.PrefixLabelPresentation.Words,
+        label_as = recipes.PrefixLabelPresentations.Words,
         template = "{invalid_key}| " )
     with pytest.raises( KeyError ):
         recipes._render_prefix(
@@ -509,7 +509,7 @@ def test_201_invalid_ts_format( recipes, test_console, fake_auxiliaries ):
     )
     control = recipes.PrefixFormatControl(
         colorize = False,
-        label_as = recipes.PrefixLabelPresentation.Words,
+        label_as = recipes.PrefixLabelPresentations.Words,
         template = "{timestamp} {flavor}| ",
         ts_format = '%Q' )
     with pytest.raises( ValueError ):

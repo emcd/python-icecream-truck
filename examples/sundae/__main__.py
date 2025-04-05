@@ -18,7 +18,7 @@ def main( ) -> None:
     ''' Runs task scheduler with sundae debugging. '''
     # Register the module with sundae-specific flavors.
     sundae.register_module(
-        prefix_label_as = sundae.PrefixLabelPresentation.Emoji,
+        prefix_label_as = sundae.PrefixLabelPresentations.Emoji,
         prefix_template = '{timestamp} [{module_qname}] {flavor} ',
         prefix_ts_format = '%H:%M:%S' )
     # Install the truck with active flavors for this module.

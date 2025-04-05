@@ -88,7 +88,7 @@ class PrefixDecorations( __.enum.IntFlag ):
     Emoji =     __.enum.auto( )
 
 
-class PrefixLabelPresentation( __.enum.IntFlag ):
+class PrefixLabelPresentations( __.enum.IntFlag ):
     ''' How prefix label should be presented. '''
 
     Nothing =   0
@@ -103,7 +103,7 @@ class PrefixFormatControl( metaclass = __.ImmutableCompleteDataclass ):
         bool, __.typx.Doc( ''' Attempt to colorize? ''' )
     ] = True
     label_as: __.typx.Annotated[
-        PrefixLabelPresentation,
+        PrefixLabelPresentations,
         __.typx.Doc(
             ''' How to present prefix label.
 
@@ -112,7 +112,7 @@ class PrefixFormatControl( metaclass = __.ImmutableCompleteDataclass ):
 
                 For both emoji and words: ``Emoji | Words``.
             ''' )
-    ] = PrefixLabelPresentation.Words
+    ] = PrefixLabelPresentations.Words
     styles: __.typx.Annotated[
         __.AccretiveDictionary[ str, _Style ],
         __.typx.Doc(
@@ -156,7 +156,7 @@ ProduceModulecfgConsoleFactoryArgument: __.typx.TypeAlias = __.typx.Annotated[
         ''' Factory function that produces Rich console instances. ''' ),
 ]
 ProduceModulecfgPrefixLabelAsArgument: __.typx.TypeAlias = __.typx.Annotated[
-    __.Absential[ PrefixLabelPresentation ],
+    __.Absential[ PrefixLabelPresentations ],
     __.typx.Doc(
         ''' How to present prefix labels (words, emoji, or both). ''' ),
 ]
@@ -355,11 +355,11 @@ def _produce_special_prefix(
     styles = dict( control.styles )
     spec = _flavor_specifications[ flavor ]
     label = ''
-    if control.label_as & PrefixLabelPresentation.Emoji:
-        if control.label_as & PrefixLabelPresentation.Words:
+    if control.label_as & PrefixLabelPresentations.Emoji:
+        if control.label_as & PrefixLabelPresentations.Words:
             label = f"{spec.emoji} {spec.label}"
         else: label = f"{spec.emoji}"
-    elif control.label_as & PrefixLabelPresentation.Words:
+    elif control.label_as & PrefixLabelPresentations.Words:
         label = f"{spec.label}"
     if control.colorize: styles[ 'flavor' ] = _Style( color = spec.color )
     return _render_prefix(
@@ -376,11 +376,11 @@ def _produce_trace_prefix(
     # TODO? Option to render indentation guides.
     styles = dict( control.styles )
     label = ''
-    if control.label_as & PrefixLabelPresentation.Emoji:
-        if control.label_as & PrefixLabelPresentation.Words:
+    if control.label_as & PrefixLabelPresentations.Emoji:
+        if control.label_as & PrefixLabelPresentations.Words:
             label = f"🔎 TRACE{level}"
         else: label = '🔎'
-    elif control.label_as & PrefixLabelPresentation.Words:
+    elif control.label_as & PrefixLabelPresentations.Words:
         label = f"TRACE{level}"
     if control.colorize and level < len( _trace_color_names ):
         styles[ 'flavor' ] = _Style( color = _trace_color_names[ level ] )
