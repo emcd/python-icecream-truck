@@ -60,6 +60,12 @@ def _strip_ansi_c1( text ):
     return regex.sub( '', text )
 
 
+@pytest.fixture( scope = 'session' )
+def printers( ):
+    ''' Provides printers module. '''
+    return cache_import_module( f"{PACKAGE_NAME}.printers" )
+
+
 @pytest.fixture
 def test_console( ):
     ''' Provides a test-specific Console implementation. '''
@@ -342,12 +348,12 @@ def test_032_formatter_output_level(
 
 
 def test_100_register_module(
-    recipes, vehicles, base, test_console, fake_auxiliaries,
+    recipes, vehicles, base, printers, test_console, fake_auxiliaries,
     simple_output, clean_builtins,
 ):
     ''' End-to-end module registration works correctly. No defaults. '''
     printer_factory = base.funct.partial(
-        vehicles.produce_simple_printer, simple_output )
+        printers.produce_simple_printer, simple_output )
     truck = vehicles.install(
         active_flavors = { 'note' }, printer_factory = printer_factory )
     recipes.register_module(
@@ -362,12 +368,12 @@ def test_100_register_module(
 
 
 def test_101_register_module_colorize_default(
-    recipes, vehicles, base, test_console, fake_auxiliaries,
+    recipes, vehicles, base, printers, test_console, fake_auxiliaries,
     simple_output, clean_builtins,
 ):
     ''' End-to-end module registration works correctly. Colorization. '''
     printer_factory = base.funct.partial(
-        vehicles.produce_simple_printer, simple_output )
+        printers.produce_simple_printer, simple_output )
     truck = vehicles.install(
         active_flavors = { 'note' }, printer_factory = printer_factory )
     recipes.register_module(
@@ -385,12 +391,12 @@ def test_101_register_module_colorize_default(
 
 
 def test_102_register_module_label_as_default(
-    recipes, vehicles, base, test_console, fake_auxiliaries,
+    recipes, vehicles, base, printers, test_console, fake_auxiliaries,
     simple_output, clean_builtins,
 ):
     ''' End-to-end module registration works correctly. Default labeling. '''
     printer_factory = base.funct.partial(
-        vehicles.produce_simple_printer, simple_output )
+        printers.produce_simple_printer, simple_output )
     truck = vehicles.install(
         active_flavors = { 'note' }, printer_factory = printer_factory )
     recipes.register_module(
@@ -405,7 +411,7 @@ def test_102_register_module_label_as_default(
 
 
 def test_103_register_module_custom_styles(
-    recipes, vehicles, base, test_console, fake_auxiliaries,
+    recipes, vehicles, base, printers, test_console, fake_auxiliaries,
     simple_output, clean_builtins,
 ):
     ''' End-to-end module registration works correctly. Custom styles. '''
@@ -414,7 +420,7 @@ def test_103_register_module_custom_styles(
         'module_qname': Style( color = 'green' ),
     } )
     printer_factory = base.funct.partial(
-        vehicles.produce_simple_printer, simple_output )
+        printers.produce_simple_printer, simple_output )
     truck = vehicles.install(
         active_flavors = { 'note' }, printer_factory = printer_factory )
     recipes.register_module(
@@ -436,13 +442,13 @@ def test_103_register_module_custom_styles(
 
 
 def test_104_register_module_custom_template(
-    recipes, vehicles, base, test_console, fake_auxiliaries,
+    recipes, vehicles, base, printers, test_console, fake_auxiliaries,
     simple_output, clean_builtins,
 ):
     ''' End-to-end module registration works correctly. Custom template. '''
     custom_template = "[{module_qname}] {flavor} @ {timestamp} >>> "
     printer_factory = base.funct.partial(
-        vehicles.produce_simple_printer, simple_output )
+        printers.produce_simple_printer, simple_output )
     truck = vehicles.install(
         active_flavors = { 'note' }, printer_factory = printer_factory )
     recipes.register_module(
@@ -460,12 +466,12 @@ def test_104_register_module_custom_template(
 
 
 def test_105_register_module_custom_ts_format(
-    recipes, vehicles, base, test_console, fake_auxiliaries,
+    recipes, vehicles, base, printers, test_console, fake_auxiliaries,
     simple_output, clean_builtins
 ):
     ''' End-to-end module registration works correctly. Custom timestamp. '''
     printer_factory = base.funct.partial(
-        vehicles.produce_simple_printer, simple_output )
+        printers.produce_simple_printer, simple_output )
     truck = vehicles.install(
         active_flavors = { 'note' }, printer_factory = printer_factory )
     recipes.register_module(

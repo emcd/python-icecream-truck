@@ -84,9 +84,14 @@ nitpick_ignore = [
     ( 'py:class', "frigid.dictionaries.Annotated" ),
     ( 'py:class', "frigid.dictionaries.Dictionary" ),
     ( 'py:class', "ictruck.configuration.Annotated" ),
+    ( 'py:class', "ictruck.recipes.rich.Annotated" ),
+    ( 'py:class', "ictruck.recipes.sundae.Annotated" ),
+    ( 'py:class', "rich.console.Console" ),
+    ( 'py:class', "rich.style.Style" ),
     ( 'py:class', "types.Annotated" ),
     ( 'py:class', "typing_extensions.Any" ),
     ( 'py:class', "typing_extensions.Self" ),
+    ( 'py:func', "__.register_module" ),
 ]
 
 # -- Options for linkcheck builder -------------------------------------------

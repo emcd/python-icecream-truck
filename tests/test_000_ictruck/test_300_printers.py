@@ -18,15 +18,35 @@
 #============================================================================#
 
 
-''' Common imports used by recipes. '''
-
-# ruff: noqa: F401,F403,F405
+''' Tests for printers module. '''
 
 
-from __future__ import annotations
+import pytest
 
-from .. import exceptions
-from ..__ import *
-from ..configuration import *
-from ..printers import *
-from ..vehicles import *
+
+from . import PACKAGE_NAME, cache_import_module
+
+
+@pytest.fixture( scope = 'session' )
+def printers( ):
+    ''' Provides printers module. '''
+    return cache_import_module( f"{PACKAGE_NAME}.printers" )
+
+
+def test_010_simple_printer_output( printers, simple_output ):
+    ''' Simple printer outputs text to target stream without ANSI colors. '''
+    printer = printers.produce_simple_printer( simple_output, 'test', 1 )
+    text_core = "Test output"
+    text = f"\x1b[33m{text_core}\x1b[0m"
+    printer( text )
+    assert simple_output.getvalue( ) == f"{text_core}\n"
+
+
+def test_011_simple_printer_color_output( printers, simple_output ):
+    ''' Simple printer outputs text to target stream with ANSI colors. '''
+    printer = (
+        printers.produce_simple_printer(
+            simple_output, 'test', 1, force_color = True ) )
+    text = "\x1b[33mTest output\x1b[0m"
+    printer( text )
+    assert simple_output.getvalue( ) == f"{text}\n"

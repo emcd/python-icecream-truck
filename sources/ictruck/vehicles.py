@@ -30,11 +30,11 @@
 from __future__ import annotations
 
 import icecream as _icecream
-import colorama as _colorama
 
 from . import __
 from . import configuration as _cfg
 from . import exceptions as _exceptions
+from . import printers as _printers
 
 
 if __.typx.TYPE_CHECKING: # pragma: no cover
@@ -52,26 +52,6 @@ builtins_alias_default: __.typx.Annotated[
     str,
     __.typx.Doc( ''' Default alias for global truck in builtins module. ''' ),
 ] = 'ictr'
-
-
-@_validate_arguments
-def produce_simple_printer(
-    target: __.io.TextIOBase,
-    mname: str,
-    flavor: _cfg.Flavor,
-    force_color: bool = False,
-) -> Printer:
-    ''' Produces printer which uses standard Python 'print'. '''
-    match __.sys.platform:
-        case 'win32':
-            winansi = _colorama.AnsiToWin32( target ) # pyright: ignore
-            target_ = ( # pragma: no cover
-                winansi.stream if winansi.convert else target )
-        case _: target_ = target
-    return __.funct.partial(
-        _simple_print,
-        target = target_, # pyright: ignore
-        force_color = force_color )
 
 
 class Truck( metaclass = __.ImmutableCompleteDataclass ):
@@ -106,7 +86,7 @@ class Truck( metaclass = __.ImmutableCompleteDataclass ):
             ''' ),
     ] = __.dcls.field( default_factory = __.AccretiveDictionary ) # pyright: ignore
     printer_factory: __.typx.Annotated[
-        PrinterFactoryUnion,
+        _printers.PrinterFactoryUnion,
         __.typx.Doc(
             ''' Factory which produces callables to output text somewhere.
 
@@ -115,7 +95,7 @@ class Truck( metaclass = __.ImmutableCompleteDataclass ):
                 return a callable which takes one argument, the string
                 produced by a formatter.
             ''' ),
-    ] = __.funct.partial( produce_simple_printer, __.sys.stderr )
+    ] = __.funct.partial( _printers.produce_simple_printer, __.sys.stderr )
     trace_levels: __.typx.Annotated[
         TraceLevelsRegistry,
         __.typx.Doc(
@@ -210,10 +190,6 @@ ActiveFlavorsRegistry: __.typx.TypeAlias = (
     __.ImmutableDictionary[ str | None, ActiveFlavors ] )
 ActiveFlavorsRegistryLiberal: __.typx.TypeAlias = (
     __.cabc.Mapping[ str | None, ActiveFlavorsLiberal ] )
-Printer: __.typx.TypeAlias = __.cabc.Callable[ [ str ], None ]
-PrinterFactory: __.typx.TypeAlias = (
-    __.cabc.Callable[ [ str, _cfg.Flavor ], Printer ] )
-PrinterFactoryUnion: __.typx.TypeAlias = __.io.TextIOBase | PrinterFactory
 TraceLevelsRegistry: __.typx.TypeAlias = (
     __.ImmutableDictionary[ str | None, int ] )
 TraceLevelsRegistryLiberal: __.typx.TypeAlias = (
@@ -279,7 +255,7 @@ ProduceTruckGeneralcfgArgument: __.typx.TypeAlias = __.typx.Annotated[
         ''' ),
 ]
 ProduceTruckPrinterFactoryArgument: __.typx.TypeAlias = __.typx.Annotated[
-    __.Absential[ PrinterFactoryUnion ],
+    __.Absential[ _printers.PrinterFactoryUnion ],
     __.typx.Doc(
         ''' Factory which produces callables to output text somewhere.
 
@@ -419,10 +395,12 @@ def register_module(
         without overriding anything set by the application or other libraries.
         Application developers should call :py:func:`install` instead.
     '''
+    # TODO: Register against a global thread-safe registry.
+    #       Global ``install`` would inherit modulecfgs from registry.
     import builtins
     truck = getattr( builtins, builtins_alias_default, None )
     if not isinstance( truck, Truck ):
-        truck = Truck( printer_factory = lambda mname, flavor: lambda x: None )
+        truck = Truck( )
         __.install_builtin_safely(
             builtins_alias_default,
             truck,
@@ -451,6 +429,7 @@ def active_flavors_from_environment(
         if not part: continue
         if ':' in part:
             mname, flavors = part.split( ':', 1 )
+            # TODO: Parse '*' to special "all flavors" object.
             active_flavors[ mname ] = flavors.split( ',' )
         else: active_flavors[ None ] = part.split( ',' )
     return __.ImmutableDictionary( {
@@ -585,18 +564,3 @@ def _produce_ic_configuration(
     for fconfig in fconfigs:
         configd = _merge_ic_configuration( configd, fconfig )
     return __.ImmutableDictionary( configd )
-
-
-def _remove_ansi_c1_sequences( text: str ) -> str:
-    # https://stackoverflow.com/a/14693789/14833542
-    regex = __.re.compile( r'''\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])''' )
-    return regex.sub( '', text )
-
-
-def _simple_print(
-    text: str, target: __.io.TextIOBase, force_color = False
-) -> None:
-    if not force_color and not target.isatty( ):
-        print( _remove_ansi_c1_sequences( text ), file = target )
-        return
-    print( text, file = target )

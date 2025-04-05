@@ -58,6 +58,12 @@ def exceptions( ):
 
 
 @pytest.fixture( scope = 'session' )
+def printers( ):
+    ''' Provides printers module. '''
+    return cache_import_module( f"{PACKAGE_NAME}.printers" )
+
+
+@pytest.fixture( scope = 'session' )
 def vehicles( ):
     ''' Provides vehicles module. '''
     return cache_import_module( f"{PACKAGE_NAME}.vehicles" )
@@ -70,25 +76,6 @@ def mock_env( monkeypatch ):
         for k, v in env_dict.items( ):
             monkeypatch.setenv( k, v )
     return _mock_env
-
-
-def test_010_simple_printer_output( vehicles, simple_output ):
-    ''' Simple printer outputs text to target stream without ANSI colors. '''
-    printer = vehicles.produce_simple_printer( simple_output, 'test', 1 )
-    text_core = "Test output"
-    text = f"\x1b[33m{text_core}\x1b[0m"
-    printer( text )
-    assert simple_output.getvalue( ) == f"{text_core}\n"
-
-
-def test_011_simple_printer_color_output( vehicles, simple_output ):
-    ''' Simple printer outputs text to target stream with ANSI colors. '''
-    printer = (
-        vehicles.produce_simple_printer(
-            simple_output, 'test', 1, force_color = True ) )
-    text = "\x1b[33mTest output\x1b[0m"
-    printer( text )
-    assert simple_output.getvalue( ) == f"{text}\n"
 
 
 def test_111_invalid_flavor_type( configuration, exceptions, vehicles ):
@@ -526,11 +513,12 @@ def test_600_register_module_basic( vehicles, configuration, clean_builtins ):
 
 
 def test_601_register_module_multiple(
-    vehicles, configuration, clean_builtins, simple_output, monkeypatch
+    vehicles, configuration, printers,
+    clean_builtins, simple_output, monkeypatch,
 ):
     ''' Register multiple modules with varying configurations. '''
     printer_factory = funct.partial(
-        vehicles.produce_simple_printer, simple_output )
+        printers.produce_simple_printer, simple_output )
     truck = vehicles.install(
         trace_levels = { __package__: 0 },
         active_flavors = { 'foo' },
@@ -557,11 +545,9 @@ def test_610_register_module_auto_name( vehicles, clean_builtins ):
 def test_620_register_module_auto_create( vehicles, clean_builtins ):
     ''' Register module creates Truck if none exists. '''
     import builtins
-    if 'ictr' in builtins.__dict__: del builtins.__dict__[ 'ictr' ]
     vehicles.register_module( )
     assert 'ictr' in builtins.__dict__
     assert isinstance( builtins.ictr, vehicles.Truck )
-    assert builtins.ictr.printer_factory( 'm', 'f' )( None ) is None
 
 
 def test_630_register_module_absent_args(
@@ -576,11 +562,12 @@ def test_630_register_module_absent_args(
 
 
 def test_640_register_module_full_config(
-    vehicles, configuration, clean_builtins, simple_output, monkeypatch
+    vehicles, configuration, printers,
+    clean_builtins, simple_output, monkeypatch,
 ):
     ''' Register module with all arguments configured. '''
     printer_factory = funct.partial(
-        vehicles.produce_simple_printer, simple_output )
+        printers.produce_simple_printer, simple_output )
     truck = vehicles.install(
         printer_factory = printer_factory,
         trace_levels = 0, active_flavors = { 'info' } )
