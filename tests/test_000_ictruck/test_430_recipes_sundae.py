@@ -21,6 +21,8 @@
 
 # ruff: noqa: RUF001
 
+import re
+
 import pytest
 
 from rich.console import Console
@@ -37,8 +39,7 @@ class FakeConsole:
         import os
         blackhole = open( # noqa: SIM115
             os.devnull, 'w', encoding = locale.getpreferredencoding( ) )
-        # Explict 'no_color' needed on Windows.
-        self.console = Console( file = blackhole, no_color = True )
+        self.console = Console( file = blackhole  )
         self.print_calls = [ ]
 
     def print( self, text, style = None, end = '\n' ):
@@ -51,6 +52,12 @@ class FakeConsole:
         try: 1 / 0
         except Exception:
             self.console.print_exception( )
+
+
+def _strip_ansi_c1( text ):
+    # Needed to work around https://github.com/Textualize/rich/issues/3693.
+    regex = re.compile( r'''\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])''' )
+    return regex.sub( '', text )
 
 
 @pytest.fixture
@@ -161,8 +168,8 @@ def test_020_produce_special_prefix(
     else: presentation = getattr( recipes.PrefixLabelPresentation, label_as )
     control = recipes.PrefixFormatControl(
         colorize = True, label_as = presentation )
-    prefix = recipes._produce_special_prefix(
-        test_console, fake_auxiliaries, control, 'test_module', flavor )
+    prefix = _strip_ansi_c1( recipes._produce_special_prefix(
+        test_console, fake_auxiliaries, control, 'test_module', flavor ) )
     assert prefix == expected_prefix
     if expected_style and control.colorize:
         label = expected_prefix.split( '|' )[ 0 ].strip( )
@@ -192,8 +199,8 @@ def test_021_produce_trace_prefix(
     else: presentation = getattr( recipes.PrefixLabelPresentation, label_as )
     control = recipes.PrefixFormatControl(
         colorize = True, label_as = presentation )
-    prefix = recipes._produce_trace_prefix(
-        test_console, fake_auxiliaries, control, 'test_module', level )
+    prefix = _strip_ansi_c1( recipes._produce_trace_prefix(
+        test_console, fake_auxiliaries, control, 'test_module', level ) )
     assert prefix == expected_prefix
     if expected_style and control.colorize:
         label = expected_prefix.split( '|' )[ 0 ].strip( )
@@ -298,7 +305,7 @@ def test_030_formatter_output_custom_flavor(
     formatter = recipes._produce_formatter_factory(
         test_console, fake_auxiliaries )(
             configuration.FormatterControl( ), 'test', 'note' )
-    result = formatter( { 'key': 'value' } )
+    result = _strip_ansi_c1( formatter( { 'key': 'value' } ) )
     assert result == "{'key': 'value'}\n"
 
 
@@ -315,7 +322,7 @@ def test_031_formatter_stack_trace(
     formatter = recipes._produce_formatter_factory(
         test_console, fake_auxiliaries )(
             configuration.FormatterControl( ), 'test', 'errorx' )
-    result = formatter( "Error message" )
+    result = _strip_ansi_c1( formatter( "Error message" ) )
     assert result.endswith( "\nError message" )
     assert len( result ) > len( "\nError message" )
 
@@ -327,7 +334,7 @@ def test_032_formatter_output_level(
     formatter = recipes._produce_formatter_factory(
         test_console, fake_auxiliaries )(
             configuration.FormatterControl( ), 'test', 1 )
-    result = formatter( { 'key': 'value' } )
+    result = _strip_ansi_c1( formatter( { 'key': 'value' } ) )
     assert result == "{'key': 'value'}\n"
 
 
@@ -350,7 +357,7 @@ def test_100_register_module(
         auxiliaries = fake_auxiliaries )
     debugger = truck( 'note' )
     debugger( "Integration test" )
-    output = simple_output.getvalue()
+    output = _strip_ansi_c1( simple_output.getvalue( ) )
     assert output == "NOTE| Integration test\n"
 
 
@@ -370,7 +377,7 @@ def test_101_register_module_colorize_default(
         auxiliaries = fake_auxiliaries )
     debugger = truck( 'note' )
     debugger( "Colorize test" )
-    output = simple_output.getvalue( )
+    output = _strip_ansi_c1( simple_output.getvalue( ) )
     assert output == "NOTE| Colorize test\n"
     assert any(
         call[ 0 ] == 'NOTE' and call[ 1 ].color.name == 'blue'
@@ -393,7 +400,7 @@ def test_102_register_module_label_as_default(
         auxiliaries = fake_auxiliaries )
     debugger = truck( 'note' )
     debugger( "Label as default test" )
-    output = simple_output.getvalue()
+    output = _strip_ansi_c1( simple_output.getvalue( ) )
     assert output == "NOTE| Label as default test\n"
 
 
@@ -418,7 +425,7 @@ def test_103_register_module_custom_styles(
         auxiliaries = fake_auxiliaries )
     debugger = truck( 'note' )
     debugger( "Custom styles test" )
-    output = simple_output.getvalue( )
+    output = _strip_ansi_c1( simple_output.getvalue( ) )
     assert output == "NOTE| Custom styles test\n"
     # assert any(
     #     call[ 0 ] == 'NOTE' and call[ 1 ].color.name == 'magenta'
@@ -446,7 +453,7 @@ def test_104_register_module_custom_template(
         auxiliaries = fake_auxiliaries )
     debugger = truck( 'note' )
     debugger( "Custom template test" )
-    output = simple_output.getvalue( )
+    output = _strip_ansi_c1( simple_output.getvalue( ) )
     assert output == (
         f"[{__name__}] NOTE @ 2025-04-01 12:00:00 "
         '>>> "Custom template test": Custom template test\n' )
@@ -470,7 +477,7 @@ def test_105_register_module_custom_ts_format(
         auxiliaries = fake_auxiliaries )
     debugger = truck( 'note' )
     debugger( "Custom ts format test" )
-    output = simple_output.getvalue()
+    output = _strip_ansi_c1( simple_output.getvalue( ) )
     assert output == "12:00:00 NOTE| Custom ts format test\n"
 
 
@@ -492,7 +499,7 @@ def test_200_invalid_prefix_template(
 
 
 def test_201_invalid_ts_format( recipes, test_console, fake_auxiliaries ):
-    ''' Test invalid timestamp format raises exception. '''
+    ''' Invalid timestamp format raises exception. '''
     def raise_value_error( fmt ): raise ValueError( "Invalid format" )
     fake_auxiliaries = recipes.Auxiliaries(
         exc_info_discoverer = fake_auxiliaries.exc_info_discoverer,
