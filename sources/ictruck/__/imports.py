@@ -40,6 +40,7 @@ import                      sys
 import threading as         threads
 import                      time
 import                      types
+import                      warnings
 
 import typing_extensions as typx
 # --- BEGIN: Injected by Copier ---

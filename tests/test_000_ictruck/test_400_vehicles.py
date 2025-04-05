@@ -22,6 +22,7 @@
 
 
 import functools as funct
+import warnings
 
 import hypothesis
 import pytest
@@ -485,7 +486,9 @@ def test_516_install_with_invalid_trace_levels(
 ):
     ''' Installation skips invalid trace levels in environment. '''
     monkeypatch.setenv( 'ICTRUCK_TRACE_LEVELS', 'abc+x.y:5+z:def' )
-    truck = vehicles.install( printer_factory = simple_output )
+    with warnings.catch_warnings( record = True ) as records:
+        truck = vehicles.install( printer_factory = simple_output )
+    assert len( records ) == 2
     assert truck.trace_levels == (
         base.ImmutableDictionary( { None: -1, 'x.y': 5 } ) )
 
@@ -495,7 +498,9 @@ def test_517_produce_truck_with_invalid_global_trace_level(
 ):
     ''' Truck production skips invalid trace level in environment. '''
     monkeypatch.setenv( 'ICTRUCK_TRACE_LEVELS', 'invalid' )
-    truck = vehicles.produce_truck( printer_factory = simple_output )
+    with warnings.catch_warnings( record = True ) as records:
+        truck = vehicles.produce_truck( printer_factory = simple_output )
+    assert len( records ) == 1
     assert truck.trace_levels == base.ImmutableDictionary( { None: -1 } )
 
 

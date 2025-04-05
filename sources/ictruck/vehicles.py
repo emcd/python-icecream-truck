@@ -446,13 +446,14 @@ def trace_levels_from_environment(
     value = __.os.getenv( name, '' )
     for part in value.split( '+' ):
         if not part: continue
-        if ':' in part:
-            mname, level = part.split( ':', 1 )
-            if not level.isdigit( ): continue # TODO: warn
-            trace_levels[ mname ] = int( level )
-        else:
-            if not part.isdigit( ): continue
-            trace_levels[ None ] = int( part ) # TODO: warn
+        if ':' in part: mname, level = part.split( ':', 1 )
+        else: mname, level = None, part
+        if not level.isdigit( ):
+            __.warnings.warn(
+                f"Non-integer trace level {level!r} "
+                f"in environment variable {name!r}." )
+            continue
+        trace_levels[ mname ] = int( level )
     return __.ImmutableDictionary( trace_levels )
 
 
