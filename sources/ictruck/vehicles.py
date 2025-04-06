@@ -42,25 +42,30 @@ if __.typx.TYPE_CHECKING: # pragma: no cover
 
 
 _installer_lock: __.threads.Lock = __.threads.Lock( )
+_registrar_lock: __.threads.Lock = __.threads.Lock( )
 _validate_arguments = (
     __.validate_arguments(
         globalvars = globals( ),
         errorclass = _exceptions.ArgumentClassInvalidity ) )
 
 
-builtins_alias_default: __.typx.Annotated[
-    str,
-    __.typx.Doc( ''' Default alias for global truck in builtins module. ''' ),
-] = 'ictr'
-
-
 class Omniflavor( __.enum.Enum ):
-    ''' Singleton to match all active flavors. '''
+    ''' Singleton to match any flavor. '''
 
     Instance = __.enum.auto( )
 
 
-omniflavor: Omniflavor = Omniflavor.Instance
+builtins_alias_default: __.typx.Annotated[
+    str,
+    __.typx.Doc( ''' Default alias for global truck in builtins module. ''' ),
+] = 'ictr'
+modulecfgs: __.typx.Annotated[
+    ModulesConfigurationsRegistry,
+    __.typx.Doc( ''' Global registry of module configurations. ''' ),
+] = __.AccretiveDictionary( )
+omniflavor: __.typx.Annotated[
+    Omniflavor, __.typx.Doc( ''' Matches any flavor. ''' )
+] = Omniflavor.Instance
 
 
 class Truck( metaclass = __.ImmutableCompleteDataclass ):
@@ -85,7 +90,7 @@ class Truck( metaclass = __.ImmutableCompleteDataclass ):
             ''' ),
     ] = __.dcls.field( default_factory = _cfg.VehicleConfiguration )
     modulecfgs: __.typx.Annotated[
-        __.AccretiveDictionary[ str, _cfg.ModuleConfiguration ],
+        ModulesConfigurationsRegistry,
         __.typx.Doc(
             ''' Registry of per-module configurations.
 
@@ -93,7 +98,7 @@ class Truck( metaclass = __.ImmutableCompleteDataclass ):
                 Top-level packages inherit from general instance
                 configruration.
             ''' ),
-    ] = __.dcls.field( default_factory = __.AccretiveDictionary ) # pyright: ignore
+    ] = modulecfgs
     printer_factory: __.typx.Annotated[
         _printers.PrinterFactoryUnion,
         __.typx.Doc(
@@ -157,7 +162,7 @@ class Truck( metaclass = __.ImmutableCompleteDataclass ):
     def install( self, alias: str = builtins_alias_default ) -> __.typx.Self:
         ''' Installs truck into builtins with provided alias.
 
-            Replaces an existing truck, preserving its module configurations.
+            Replaces an existing truck. Preserves global module configurations.
 
             Library developers should call :py:func:`register_module` instead.
         '''
@@ -166,7 +171,6 @@ class Truck( metaclass = __.ImmutableCompleteDataclass ):
             truck_o = getattr( builtins, alias, None )
             if isinstance( truck_o, Truck ):
                 # TODO: self( 'ictruck-note' )( 'truck replacement', self )
-                self.modulecfgs.update( truck_o.modulecfgs )
                 setattr( builtins, alias, self )
             else:
                 __.install_builtin_safely(
@@ -190,7 +194,8 @@ class Truck( metaclass = __.ImmutableCompleteDataclass ):
             name = _discover_invoker_module_name( )
         if __.is_absent( configuration ):
             configuration = _cfg.ModuleConfiguration( )
-        self.modulecfgs[ name ] = configuration
+        with _registrar_lock:
+            self.modulecfgs[ name ] = configuration
         return self
 
 
@@ -204,6 +209,10 @@ ActiveFlavorsRegistry: __.typx.TypeAlias = (
     __.ImmutableDictionary[ str | None, ActiveFlavors ] )
 ActiveFlavorsRegistryLiberal: __.typx.TypeAlias = (
     __.cabc.Mapping[ str | None, ActiveFlavorsLiberal ] )
+ModulesConfigurationsRegistry: __.typx.TypeAlias = (
+    __.AccretiveDictionary[ str, _cfg.ModuleConfiguration ] )
+ModulesConfigurationsRegistryLiberal: __.typx.TypeAlias = (
+    __.cabc.Mapping[ str, _cfg.ModuleConfiguration ] )
 TraceLevelsRegistry: __.typx.TypeAlias = (
     __.ImmutableDictionary[ str | None, int ] )
 TraceLevelsRegistryLiberal: __.typx.TypeAlias = (
@@ -268,6 +277,14 @@ ProduceTruckGeneralcfgArgument: __.typx.TypeAlias = __.typx.Annotated[
             defaults to a suitable configuration for application use.
         ''' ),
 ]
+ProduceTruckModulecfgsArgument: __.typx.TypeAlias = __.typx.Annotated[
+    __.Absential[ ModulesConfigurationsRegistryLiberal ],
+    __.typx.Doc(
+        ''' Module configurations for the truck.
+
+            If absent, defaults to global modules registry.
+        ''' ),
+]
 ProduceTruckPrinterFactoryArgument: __.typx.TypeAlias = __.typx.Annotated[
     __.Absential[ _printers.PrinterFactoryUnion ],
     __.typx.Doc(
@@ -324,96 +341,6 @@ RegisterModulePrefixEmitterArgument: __.typx.TypeAlias = __.typx.Annotated[
 ]
 
 
-@_validate_arguments
-def install( # noqa: PLR0913
-    alias: InstallAliasArgument = builtins_alias_default,
-    active_flavors: ProduceTruckActiveFlavorsArgument = __.absent,
-    generalcfg: ProduceTruckGeneralcfgArgument = __.absent,
-    printer_factory: ProduceTruckPrinterFactoryArgument = __.absent,
-    trace_levels: ProduceTruckTraceLevelsArgument = __.absent,
-    evname_active_flavors: ProduceTruckEvnActiveFlavorsArgument = __.absent,
-    evname_trace_levels: ProduceTruckEvnTraceLevelsArgument = __.absent,
-) -> Truck:
-    ''' Produces truck and installs it into builtins with alias.
-
-        Replaces an existing truck, preserving its module configurations.
-
-        Library developers should call :py:func:`register_module` instead.
-    '''
-    truck = produce_truck(
-        active_flavors = active_flavors,
-        generalcfg = generalcfg,
-        printer_factory = printer_factory,
-        trace_levels = trace_levels,
-        evname_active_flavors = evname_active_flavors,
-        evname_trace_levels = evname_trace_levels )
-    return truck.install( alias = alias )
-
-
-@_validate_arguments
-def produce_truck( # noqa: PLR0913
-    active_flavors: ProduceTruckActiveFlavorsArgument = __.absent,
-    generalcfg: ProduceTruckGeneralcfgArgument = __.absent,
-    printer_factory: ProduceTruckPrinterFactoryArgument = __.absent,
-    trace_levels: ProduceTruckTraceLevelsArgument = __.absent,
-    evname_active_flavors: ProduceTruckEvnActiveFlavorsArgument = __.absent,
-    evname_trace_levels: ProduceTruckEvnTraceLevelsArgument = __.absent,
-) -> Truck:
-    ''' Produces icecream truck with some shorthand argument values. '''
-    # TODO: Deeper validation of active flavors and trace levels.
-    # TODO: Deeper validation of printer factory.
-    initargs: dict[ str, __.typx.Any ] = { }
-    if not __.is_absent( generalcfg ):
-        initargs[ 'generalcfg' ] = generalcfg
-    if not __.is_absent( printer_factory ):
-        initargs[ 'printer_factory' ] = printer_factory
-    _add_truck_initarg_active_flavors(
-        initargs, active_flavors, evname_active_flavors )
-    _add_truck_initarg_trace_levels(
-        initargs, trace_levels, evname_trace_levels )
-    return Truck( **initargs )
-
-
-@_validate_arguments
-def register_module(
-    name: RegisterModuleNameArgument = __.absent,
-    flavors: ProduceTruckFlavorsArgument = __.absent,
-    formatter_factory: RegisterModuleFormatterFactoryArgument = __.absent,
-    include_context: RegisterModuleIncludeContextArgument = __.absent,
-    prefix_emitter: RegisterModulePrefixEmitterArgument = __.absent,
-) -> _cfg.ModuleConfiguration:
-    ''' Registers module configuration on the builtin truck.
-
-        If no truck exists in builtins, installs one which produces null
-        printers.
-
-        Intended for library developers to configure debugging flavors
-        without overriding anything set by the application or other libraries.
-        Application developers should call :py:func:`install` instead.
-    '''
-    # TODO: Register against a global thread-safe registry.
-    #       Global ``install`` would inherit modulecfgs from registry.
-    import builtins
-    truck = getattr( builtins, builtins_alias_default, None )
-    if not isinstance( truck, Truck ):
-        truck = Truck( )
-        __.install_builtin_safely(
-            builtins_alias_default,
-            truck,
-            _exceptions.AttributeNondisplacement )
-    nomargs: dict[ str, __.typx.Any ] = { }
-    if not __.is_absent( flavors ):
-        nomargs[ 'flavors' ] = __.ImmutableDictionary( flavors )
-    if not __.is_absent( formatter_factory ):
-        nomargs[ 'formatter_factory' ] = formatter_factory
-    if not __.is_absent( include_context ):
-        nomargs[ 'include_context' ] = include_context
-    if not __.is_absent( prefix_emitter ):
-        nomargs[ 'prefix_emitter' ] = prefix_emitter
-    configuration = _cfg.ModuleConfiguration( **nomargs )
-    return truck.register_module( name = name, configuration = configuration )
-
-
 def active_flavors_from_environment(
     evname: __.Absential[ str ] = __.absent
 ) -> ActiveFlavorsRegistry:
@@ -454,6 +381,99 @@ def trace_levels_from_environment(
             continue
         trace_levels[ mname ] = int( level )
     return __.ImmutableDictionary( trace_levels )
+
+
+@_validate_arguments
+def install( # noqa: PLR0913
+    alias: InstallAliasArgument = builtins_alias_default,
+    active_flavors: ProduceTruckActiveFlavorsArgument = __.absent,
+    generalcfg: ProduceTruckGeneralcfgArgument = __.absent,
+    printer_factory: ProduceTruckPrinterFactoryArgument = __.absent,
+    trace_levels: ProduceTruckTraceLevelsArgument = __.absent,
+    evname_active_flavors: ProduceTruckEvnActiveFlavorsArgument = __.absent,
+    evname_trace_levels: ProduceTruckEvnTraceLevelsArgument = __.absent,
+) -> Truck:
+    ''' Produces truck and installs it into builtins with alias.
+
+        Replaces an existing truck, preserving global module configurations.
+
+        Library developers should call :py:func:`register_module` instead.
+    '''
+    truck = produce_truck(
+        active_flavors = active_flavors,
+        generalcfg = generalcfg,
+        printer_factory = printer_factory,
+        trace_levels = trace_levels,
+        evname_active_flavors = evname_active_flavors,
+        evname_trace_levels = evname_trace_levels )
+    return truck.install( alias = alias )
+
+
+@_validate_arguments
+def produce_truck( # noqa: PLR0913
+    active_flavors: ProduceTruckActiveFlavorsArgument = __.absent,
+    generalcfg: ProduceTruckGeneralcfgArgument = __.absent,
+    modulecfgs: ProduceTruckModulecfgsArgument = __.absent,
+    printer_factory: ProduceTruckPrinterFactoryArgument = __.absent,
+    trace_levels: ProduceTruckTraceLevelsArgument = __.absent,
+    evname_active_flavors: ProduceTruckEvnActiveFlavorsArgument = __.absent,
+    evname_trace_levels: ProduceTruckEvnTraceLevelsArgument = __.absent,
+) -> Truck:
+    ''' Produces icecream truck with some shorthand argument values. '''
+    # TODO: Deeper validation of active flavors and trace levels.
+    # TODO: Deeper validation of printer factory.
+    initargs: dict[ str, __.typx.Any ] = { }
+    if not __.is_absent( generalcfg ):
+        initargs[ 'generalcfg' ] = generalcfg
+    if not __.is_absent( modulecfgs ):
+        initargs[ 'modulecfgs' ] = __.AccretiveDictionary(
+            {   mname: configuration for mname, configuration
+                in modulecfgs.items( ) } )
+    if not __.is_absent( printer_factory ):
+        initargs[ 'printer_factory' ] = printer_factory
+    _add_truck_initarg_active_flavors(
+        initargs, active_flavors, evname_active_flavors )
+    _add_truck_initarg_trace_levels(
+        initargs, trace_levels, evname_trace_levels )
+    return Truck( **initargs )
+
+
+@_validate_arguments
+def register_module(
+    name: RegisterModuleNameArgument = __.absent,
+    flavors: ProduceTruckFlavorsArgument = __.absent,
+    formatter_factory: RegisterModuleFormatterFactoryArgument = __.absent,
+    include_context: RegisterModuleIncludeContextArgument = __.absent,
+    prefix_emitter: RegisterModulePrefixEmitterArgument = __.absent,
+) -> _cfg.ModuleConfiguration:
+    ''' Registers module configuration on the builtin truck.
+
+        If no truck exists in builtins, installs one which produces null
+        printers.
+
+        Intended for library developers to configure debugging flavors
+        without overriding anything set by the application or other libraries.
+        Application developers should call :py:func:`install` instead.
+    '''
+    import builtins
+    truck = getattr( builtins, builtins_alias_default, None )
+    if not isinstance( truck, Truck ):
+        truck = Truck( )
+        __.install_builtin_safely(
+            builtins_alias_default,
+            truck,
+            _exceptions.AttributeNondisplacement )
+    nomargs: dict[ str, __.typx.Any ] = { }
+    if not __.is_absent( flavors ):
+        nomargs[ 'flavors' ] = __.ImmutableDictionary( flavors )
+    if not __.is_absent( formatter_factory ):
+        nomargs[ 'formatter_factory' ] = formatter_factory
+    if not __.is_absent( include_context ):
+        nomargs[ 'include_context' ] = include_context
+    if not __.is_absent( prefix_emitter ):
+        nomargs[ 'prefix_emitter' ] = prefix_emitter
+    configuration = _cfg.ModuleConfiguration( **nomargs )
+    return truck.register_module( name = name, configuration = configuration )
 
 
 def _add_truck_initarg_active_flavors(

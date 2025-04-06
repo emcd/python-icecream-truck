@@ -25,6 +25,7 @@ import re
 
 import pytest
 
+from accretive.qaliases import AccretiveDictionary
 from rich.console import Console
 from rich.style import Style
 
@@ -354,8 +355,11 @@ def test_100_register_module(
     ''' End-to-end module registration works correctly. No defaults. '''
     printer_factory = base.funct.partial(
         printers.produce_simple_printer, simple_output )
-    truck = vehicles.install(
-        active_flavors = { 'note' }, printer_factory = printer_factory )
+    truck = vehicles.produce_truck(
+        modulecfgs = AccretiveDictionary( ),
+        active_flavors = { 'note' },
+        printer_factory = printer_factory
+    ).install( )
     recipes.register_module(
         colorize = False,
         prefix_label_as = recipes.PrefixLabelPresentations.Words,
@@ -374,8 +378,11 @@ def test_101_register_module_colorize_default(
     ''' End-to-end module registration works correctly. Colorization. '''
     printer_factory = base.funct.partial(
         printers.produce_simple_printer, simple_output )
-    truck = vehicles.install(
-        active_flavors = { 'note' }, printer_factory = printer_factory )
+    truck = vehicles.produce_truck(
+        modulecfgs = AccretiveDictionary( ),
+        active_flavors = { 'note' },
+        printer_factory = printer_factory
+    ).install( )
     recipes.register_module(
         # colorize is absent, should default to True
         prefix_label_as = recipes.PrefixLabelPresentations.Words,
@@ -397,8 +404,11 @@ def test_102_register_module_label_as_default(
     ''' End-to-end module registration works correctly. Default labeling. '''
     printer_factory = base.funct.partial(
         printers.produce_simple_printer, simple_output )
-    truck = vehicles.install(
-        active_flavors = { 'note' }, printer_factory = printer_factory )
+    truck = vehicles.produce_truck(
+        modulecfgs = AccretiveDictionary( ),
+        active_flavors = { 'note' },
+        printer_factory = printer_factory
+    ).install( )
     recipes.register_module(
         colorize = False,
         # prefix_label_as is absent, should default to Words
@@ -421,8 +431,11 @@ def test_103_register_module_custom_styles(
     } )
     printer_factory = base.funct.partial(
         printers.produce_simple_printer, simple_output )
-    truck = vehicles.install(
-        active_flavors = { 'note' }, printer_factory = printer_factory )
+    truck = vehicles.produce_truck(
+        modulecfgs = AccretiveDictionary( ),
+        active_flavors = { 'note' },
+        printer_factory = printer_factory
+    ).install( )
     recipes.register_module(
         colorize = True,
         prefix_label_as = recipes.PrefixLabelPresentations.Words,
@@ -449,8 +462,11 @@ def test_104_register_module_custom_template(
     custom_template = "[{module_qname}] {flavor} @ {timestamp} >>> "
     printer_factory = base.funct.partial(
         printers.produce_simple_printer, simple_output )
-    truck = vehicles.install(
-        active_flavors = { 'note' }, printer_factory = printer_factory )
+    truck = vehicles.produce_truck(
+        modulecfgs = AccretiveDictionary( ),
+        active_flavors = { 'note' },
+        printer_factory = printer_factory
+    ).install( )
     recipes.register_module(
         colorize = False,
         prefix_label_as = recipes.PrefixLabelPresentations.Words,
@@ -472,8 +488,11 @@ def test_105_register_module_custom_ts_format(
     ''' End-to-end module registration works correctly. Custom timestamp. '''
     printer_factory = base.funct.partial(
         printers.produce_simple_printer, simple_output )
-    truck = vehicles.install(
-        active_flavors = { 'note' }, printer_factory = printer_factory )
+    truck = vehicles.produce_truck(
+        modulecfgs = AccretiveDictionary( ),
+        active_flavors = { 'note' },
+        printer_factory = printer_factory
+    ).install( )
     recipes.register_module(
         colorize = False,
         prefix_label_as = recipes.PrefixLabelPresentations.Words,

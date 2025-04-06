@@ -48,7 +48,7 @@ def install(
 ) -> __.Truck:
     ''' Produces truck and installs it into builtins with alias.
 
-        Replaces an existing truck, preserving its module configurations.
+        Replaces an existing truck, preserving global module configurations.
 
         Library developers should call :py:func:`__.register_module` instead.
     '''

@@ -27,6 +27,8 @@ import warnings
 import hypothesis
 import pytest
 
+from accretive.qaliases import AccretiveDictionary
+from frigid.qaliases import ImmutableDictionary
 from hypothesis import strategies as st
 
 from . import PACKAGE_NAME, cache_import_module
@@ -38,12 +40,6 @@ valid_env_str = st.text(
         exclude_characters=['\x00']  # Explicitly exclude null bytes
     )
 )
-
-
-@pytest.fixture( scope = 'session' )
-def base( ):
-    ''' Provides internals module. '''
-    return cache_import_module( f"{PACKAGE_NAME}.__" )
 
 
 @pytest.fixture( scope = 'session' )
@@ -336,7 +332,7 @@ def test_502_install_with_trace_levels( vehicles, clean_builtins ):
     assert truck1.trace_levels[ None ] == 2
     levels = { None: 1, 'test': 3, }
     truck2 = vehicles.install( alias = 'ictr2', trace_levels = levels )
-    assert truck2.trace_levels == vehicles.__.ImmutableDictionary( levels )
+    assert truck2.trace_levels == ImmutableDictionary( levels )
 
 
 def test_503_install_with_active_flavors( vehicles, clean_builtins ):
@@ -345,7 +341,7 @@ def test_503_install_with_active_flavors( vehicles, clean_builtins ):
     assert truck1.active_flavors[ None ] == { 'debug', 1, }
     flavors = { None: { 'x', }, 'test': { 'y', }, }
     truck2 = vehicles.install( alias = 'ictr2', active_flavors = flavors )
-    expected = vehicles.__.ImmutableDictionary( {
+    expected = ImmutableDictionary( {
         k: set( v ) for k, v in flavors.items( ) } )
     assert truck2.active_flavors == expected
 
@@ -401,21 +397,20 @@ def test_506_install_preserves_module_configs(
 
 
 def test_510_install_with_default_env_vars(
-    vehicles, base, clean_builtins, simple_output, monkeypatch
+    vehicles, clean_builtins, simple_output, monkeypatch
 ):
     ''' Installation respects default environment variable names. '''
     monkeypatch.setenv( 'ICTRUCK_ACTIVE_FLAVORS', 'x.y:note,abort+z:success' )
     monkeypatch.setenv( 'ICTRUCK_TRACE_LEVELS', '2+x.y:5' )
     truck = vehicles.install( printer_factory = simple_output )
-    assert truck.active_flavors == base.ImmutableDictionary( {
+    assert truck.active_flavors == ImmutableDictionary( {
         'x.y': frozenset( { 'note', 'abort' } ),
         'z': frozenset( { 'success' } ) } )
-    assert truck.trace_levels == (
-        base.ImmutableDictionary( { None: 2, 'x.y': 5 } ) )
+    assert truck.trace_levels == ImmutableDictionary( { None: 2, 'x.y': 5 } )
 
 
 def test_511_install_with_custom_env_vars(
-    vehicles, base, clean_builtins, simple_output, monkeypatch
+    vehicles, clean_builtins, simple_output, monkeypatch
 ):
     ''' Installation uses custom environment variable names when provided. '''
     monkeypatch.setenv( 'CUSTOM_FLAVORS', 'test:errorx' )
@@ -425,12 +420,12 @@ def test_511_install_with_custom_env_vars(
         evname_trace_levels = 'CUSTOM_LEVELS',
         printer_factory = simple_output )
     assert truck.active_flavors == (
-        base.ImmutableDictionary( { 'test': frozenset( { 'errorx' } ) } ) )
-    assert truck.trace_levels == base.ImmutableDictionary( { None: 3 } )
+        ImmutableDictionary( { 'test': frozenset( { 'errorx' } ) } ) )
+    assert truck.trace_levels == ImmutableDictionary( { None: 3 } )
 
 
 def test_512_install_with_env_vars_disabled(
-    vehicles, base, clean_builtins, simple_output, monkeypatch
+    vehicles, clean_builtins, simple_output, monkeypatch
 ):
     ''' Installation skips environment parsing when evname is None. '''
     monkeypatch.setenv( 'ICTRUCK_ACTIVE_FLAVORS', 'x.y:foo' )
@@ -439,12 +434,12 @@ def test_512_install_with_env_vars_disabled(
         evname_active_flavors = None,
         evname_trace_levels = None,
         printer_factory = simple_output )
-    assert truck.active_flavors == base.ImmutableDictionary( { } )
-    assert truck.trace_levels == base.ImmutableDictionary( { None: -1 } )
+    assert truck.active_flavors == ImmutableDictionary( { } )
+    assert truck.trace_levels == ImmutableDictionary( { None: -1 } )
 
 
 def test_513_install_with_direct_args_overrides_env(
-    vehicles, base, clean_builtins, simple_output, monkeypatch
+    vehicles, clean_builtins, simple_output, monkeypatch
 ):
     ''' Direct arguments override environment parsing. '''
     monkeypatch.setenv( 'ICTRUCK_ACTIVE_FLAVORS', 'x.y:note' )
@@ -454,161 +449,189 @@ def test_513_install_with_direct_args_overrides_env(
         trace_levels = { 'z': 1 },
         printer_factory = simple_output )
     assert truck.active_flavors == (
-        base.ImmutableDictionary( { 'z': frozenset( { 'success' } ) } ) )
-    assert truck.trace_levels == (
-        base.ImmutableDictionary( { None: -1, 'z': 1 } ) )
+        ImmutableDictionary( { 'z': frozenset( { 'success' } ) } ) )
+    assert truck.trace_levels == ImmutableDictionary( { None: -1, 'z': 1 } )
 
 
 def test_514_produce_truck_with_env_vars(
-    vehicles, base, simple_output, monkeypatch
+    vehicles, simple_output, monkeypatch
 ):
     ''' Truck production respects environment when no direct args. '''
     monkeypatch.setenv( 'ICTRUCK_ACTIVE_FLAVORS', 'global:debug' )
     monkeypatch.setenv( 'ICTRUCK_TRACE_LEVELS', '0' )
     truck = vehicles.produce_truck( printer_factory = simple_output )
     assert truck.active_flavors == (
-        base.ImmutableDictionary( { 'global': frozenset( { 'debug' } ) } ) )
-    assert truck.trace_levels == base.ImmutableDictionary( { None: 0 } )
+        ImmutableDictionary( { 'global': frozenset( { 'debug' } ) } ) )
+    assert truck.trace_levels == ImmutableDictionary( { None: 0 } )
 
 
 def test_515_install_global_scope_active_flavors_ev(
-    vehicles, base, clean_builtins, simple_output, monkeypatch
+    vehicles, clean_builtins, simple_output, monkeypatch
 ):
     ''' Installation parses global active flavors from environment. '''
     monkeypatch.setenv( 'ICTRUCK_ACTIVE_FLAVORS', 'foo,bar' )
     truck = vehicles.install( printer_factory = simple_output )
     assert truck.active_flavors == (
-        base.ImmutableDictionary( { None: frozenset( { 'foo', 'bar' } ) } ) )
+        ImmutableDictionary( { None: frozenset( { 'foo', 'bar' } ) } ) )
 
 
 def test_516_install_wildcard_active_flavors_ev(
-    vehicles, base, clean_builtins, simple_output, monkeypatch
+    vehicles, clean_builtins, simple_output, monkeypatch
 ):
     ''' Installation parses wildcard active flavors from environment. '''
     monkeypatch.setenv( 'ICTRUCK_ACTIVE_FLAVORS', f"{__name__}:*" )
     truck = vehicles.install( printer_factory = simple_output )
     assert truck.active_flavors == (
-        base.ImmutableDictionary( { __name__: vehicles.omniflavor } ) )
+        ImmutableDictionary( { __name__: vehicles.omniflavor } ) )
 
 
 def test_517_install_with_invalid_trace_levels(
-    vehicles, base, clean_builtins, simple_output, monkeypatch
+    vehicles, clean_builtins, simple_output, monkeypatch
 ):
     ''' Installation skips invalid trace levels in environment. '''
     monkeypatch.setenv( 'ICTRUCK_TRACE_LEVELS', 'abc+x.y:5+z:def' )
     with warnings.catch_warnings( record = True ) as records:
         truck = vehicles.install( printer_factory = simple_output )
     assert len( records ) == 2
-    assert truck.trace_levels == (
-        base.ImmutableDictionary( { None: -1, 'x.y': 5 } ) )
+    assert truck.trace_levels == ImmutableDictionary( { None: -1, 'x.y': 5 } )
 
 
 def test_518_produce_truck_with_invalid_global_trace_level(
-    vehicles, base, simple_output, monkeypatch
+    vehicles, simple_output, monkeypatch
 ):
     ''' Truck production skips invalid trace level in environment. '''
     monkeypatch.setenv( 'ICTRUCK_TRACE_LEVELS', 'invalid' )
     with warnings.catch_warnings( record = True ) as records:
         truck = vehicles.produce_truck( printer_factory = simple_output )
     assert len( records ) == 1
-    assert truck.trace_levels == base.ImmutableDictionary( { None: -1 } )
+    assert truck.trace_levels == ImmutableDictionary( { None: -1 } )
 
 
-def test_600_register_module_basic( vehicles, configuration, clean_builtins ):
-    ''' Register module with explicit name and arguments. '''
-    truck = vehicles.install( )
-    flavors = {
-        'test':
-            configuration.FlavorConfiguration( prefix_emitter = 'Test| ' ) }
-    vehicles.register_module( name = 'test_module', flavors = flavors )
-    assert 'test_module' in truck.modulecfgs
-    assert (
-        truck.modulecfgs[ 'test_module' ].flavors[ 'test' ].prefix_emitter
-        == 'Test| ' )
-
-
-def test_601_register_module_multiple(
-    vehicles, configuration, printers,
-    clean_builtins, simple_output, monkeypatch,
+def test_600_register_module_basic(
+    vehicles, configuration, printers, clean_builtins, simple_output
 ):
-    ''' Register multiple modules with varying configurations. '''
+    ''' Module registration with defaults. '''
     printer_factory = funct.partial(
         printers.produce_simple_printer, simple_output )
-    truck = vehicles.install(
-        trace_levels = { __package__: 0 },
-        active_flavors = { __package__: vehicles.omniflavor },
-        printer_factory = printer_factory )
-    vehicles.register_module( name = __package__ )
-    flavors = {
-        'foo': configuration.FlavorConfiguration( prefix_emitter = 'foo:: ' ) }
-    vehicles.register_module( name = __name__, flavors = flavors )
-    truck( 0 )( 'test' )
-    truck( 'foo' )( 'test' )
-    output = simple_output.getvalue( )
-    assert "TRACE0| 'test'" in output
-    assert "foo:: 'test'" in output
-
-
-def test_610_register_module_auto_name( vehicles, clean_builtins ):
-    ''' Register module infers name from caller with custom prefix. '''
-    truck = vehicles.install( )
-    vehicles.register_module( prefix_emitter = 'Auto| ' )
-    assert __name__ in truck.modulecfgs
-    assert truck.modulecfgs[ __name__ ].prefix_emitter == 'Auto| '
-
-
-def test_620_register_module_auto_create( vehicles, clean_builtins ):
-    ''' Register module creates Truck if none exists. '''
-    import builtins
-    vehicles.register_module( )
-    assert 'ictr' in builtins.__dict__
-    assert isinstance( builtins.ictr, vehicles.Truck )
-
-
-def test_630_register_module_absent_args(
-    vehicles, configuration, clean_builtins
-):
-    ''' Register module handles absent arguments gracefully. '''
-    truck = vehicles.install( )
-    vehicles.register_module( )
-    assert __name__ in truck.modulecfgs
-    assert isinstance(
-        truck.modulecfgs[ __name__ ], configuration.ModuleConfiguration )
-
-
-def test_640_register_module_full_config(
-    vehicles, configuration, printers,
-    clean_builtins, simple_output, monkeypatch,
-):
-    ''' Register module with all arguments configured. '''
-    printer_factory = funct.partial(
-        printers.produce_simple_printer, simple_output )
-    truck = vehicles.install(
+    truck = vehicles.produce_truck(
+        modulecfgs = AccretiveDictionary( ),
         printer_factory = printer_factory,
-        trace_levels = 0, active_flavors = vehicles.omniflavor )
-    flavors = { 'info': configuration.FlavorConfiguration( ) }
-    def custom_formatter( ctrl, mname, flavor ):
-        return lambda x: f"Custom: {x}"
-    vehicles.register_module(
-        name = __name__,
-        flavors = flavors,
-        formatter_factory = custom_formatter,
-        include_context = False,
-        prefix_emitter = 'Full| ' )
-    debugger = truck( 'info' )
-    debugger( 'test' )
-    output = simple_output.getvalue( )
-    assert 'Full| Custom: test' in output
-    assert __name__ not in output
-
-
-def test_650_register_module_absent_config(
-    vehicles, configuration, clean_builtins
-):
-    ''' Register module with absent configuration uses default. '''
-    truck = vehicles.install( )
-    truck.register_module( )
+        trace_levels = 0,
+    ).install( )
+    vehicles.register_module( )
     assert __name__ in truck.modulecfgs
     config = truck.modulecfgs[ __name__ ]
     assert isinstance( config, configuration.ModuleConfiguration )
     assert config.flavors == { }
+    assert config.formatter_factory is None
+    assert config.include_context is None
+    assert config.prefix_emitter is None
+    truck( 0 )( 'test' )
+    output = simple_output.getvalue( )
+    assert "TRACE0| 'test'" in output
+
+
+def test_601_register_module_on_truck(
+    vehicles, configuration, printers, clean_builtins, simple_output
+):
+    ''' Module registration on truck with defaults. '''
+    printer_factory = funct.partial(
+        printers.produce_simple_printer, simple_output )
+    truck = vehicles.produce_truck(
+        modulecfgs = AccretiveDictionary( ),
+        printer_factory = printer_factory,
+        trace_levels = 0,
+    ).install( )
+    truck.register_module( )
+    assert __name__ in truck.modulecfgs
+    truck( 0 )( 'test' )
+    output = simple_output.getvalue( )
+    assert "TRACE0| 'test'" in output
+
+
+def test_602_register_module_full_config_global(
+    vehicles, configuration, printers, clean_builtins, simple_output
+):
+    ''' Module registration with all arguments. Global activation. '''
+    printer_factory = funct.partial(
+        printers.produce_simple_printer, simple_output )
+    truck = vehicles.produce_truck(
+        modulecfgs = AccretiveDictionary( ),
+        printer_factory = printer_factory,
+        active_flavors = vehicles.omniflavor,
+        trace_levels = 0,
+    ).install( )
+    flavors = { 'info': configuration.FlavorConfiguration( ) }
+    def custom_formatter( ctrl, mname, flavor ):
+        return lambda x: f"Custom: {x}"
+    vehicles.register_module(
+        name = __package__,
+        flavors = flavors,
+        formatter_factory = custom_formatter,
+        include_context = False,
+        prefix_emitter = 'Package| ' )
+    vehicles.register_module( prefix_emitter = 'Module| ' )
+    assert __package__ in truck.modulecfgs
+    assert __name__ in truck.modulecfgs
+    pconfig = truck.modulecfgs[ __package__ ]
+    assert pconfig.flavors
+    assert 'info' in pconfig.flavors
+    assert pconfig.formatter_factory is custom_formatter
+    assert pconfig.include_context is False
+    assert pconfig.prefix_emitter == 'Package| '
+    mconfig = truck.modulecfgs[ __name__ ]
+    assert not mconfig.flavors
+    assert mconfig.prefix_emitter == 'Module| '
+    truck( 0 )( 'check' )
+    truck( 'info' )( 'test' )
+    output = simple_output.getvalue( )
+    assert 'TRACE0| Custom: check' in output
+    assert 'Module| Custom: test' in output
+
+
+def test_603_register_module_full_config_package(
+    vehicles, configuration, printers, clean_builtins, simple_output
+):
+    ''' Module registration with all arguments. Package-level activation. '''
+    printer_factory = funct.partial(
+        printers.produce_simple_printer, simple_output )
+    truck = vehicles.produce_truck(
+        modulecfgs = AccretiveDictionary( ),
+        printer_factory = printer_factory,
+        active_flavors = { __package__: vehicles.omniflavor },
+        trace_levels = { __package__: 0 },
+    ).install( )
+    flavors = { 'info': configuration.FlavorConfiguration( ) }
+    def custom_formatter( ctrl, mname, flavor ):
+        return lambda x: f"Custom: {x}"
+    vehicles.register_module(
+        name = __package__,
+        flavors = flavors,
+        formatter_factory = custom_formatter,
+        include_context = False,
+        prefix_emitter = 'Package| ' )
+    vehicles.register_module( prefix_emitter = 'Module| ' )
+    assert __package__ in truck.modulecfgs
+    assert __name__ in truck.modulecfgs
+    pconfig = truck.modulecfgs[ __package__ ]
+    assert pconfig.flavors
+    assert 'info' in pconfig.flavors
+    assert pconfig.formatter_factory is custom_formatter
+    assert pconfig.include_context is False
+    assert pconfig.prefix_emitter == 'Package| '
+    mconfig = truck.modulecfgs[ __name__ ]
+    assert not mconfig.flavors
+    assert mconfig.prefix_emitter == 'Module| '
+    truck( 0 )( 'check' )
+    truck( 'info' )( 'test' )
+    output = simple_output.getvalue( )
+    assert 'TRACE0| Custom: check' in output
+    assert 'Module| Custom: test' in output
+
+
+def test_610_register_module_auto_create( vehicles, clean_builtins ):
+    ''' Module registration creates truck if none exists. '''
+    import builtins
+    vehicles.register_module( name = 'dummy1' )
+    assert 'ictr' in builtins.__dict__
+    assert isinstance( builtins.ictr, vehicles.Truck )
