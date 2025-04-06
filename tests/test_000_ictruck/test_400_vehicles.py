@@ -403,7 +403,7 @@ def test_506_install_preserves_module_configs(
 def test_510_install_with_default_env_vars(
     vehicles, base, clean_builtins, simple_output, monkeypatch
 ):
-    ''' Installation respects default environment. '''
+    ''' Installation respects default environment variable names. '''
     monkeypatch.setenv( 'ICTRUCK_ACTIVE_FLAVORS', 'x.y:note,abort+z:success' )
     monkeypatch.setenv( 'ICTRUCK_TRACE_LEVELS', '2+x.y:5' )
     truck = vehicles.install( printer_factory = simple_output )
@@ -471,7 +471,7 @@ def test_514_produce_truck_with_env_vars(
     assert truck.trace_levels == base.ImmutableDictionary( { None: 0 } )
 
 
-def test_515_install_with_global_env_flavors(
+def test_515_install_global_scope_active_flavors_ev(
     vehicles, base, clean_builtins, simple_output, monkeypatch
 ):
     ''' Installation parses global active flavors from environment. '''
@@ -481,7 +481,17 @@ def test_515_install_with_global_env_flavors(
         base.ImmutableDictionary( { None: frozenset( { 'foo', 'bar' } ) } ) )
 
 
-def test_516_install_with_invalid_trace_levels(
+def test_516_install_wildcard_active_flavors_ev(
+    vehicles, base, clean_builtins, simple_output, monkeypatch
+):
+    ''' Installation parses wildcard active flavors from environment. '''
+    monkeypatch.setenv( 'ICTRUCK_ACTIVE_FLAVORS', f"{__name__}:*" )
+    truck = vehicles.install( printer_factory = simple_output )
+    assert truck.active_flavors == (
+        base.ImmutableDictionary( { __name__: vehicles.omniflavor } ) )
+
+
+def test_517_install_with_invalid_trace_levels(
     vehicles, base, clean_builtins, simple_output, monkeypatch
 ):
     ''' Installation skips invalid trace levels in environment. '''
@@ -493,7 +503,7 @@ def test_516_install_with_invalid_trace_levels(
         base.ImmutableDictionary( { None: -1, 'x.y': 5 } ) )
 
 
-def test_517_produce_truck_with_invalid_global_trace_level(
+def test_518_produce_truck_with_invalid_global_trace_level(
     vehicles, base, simple_output, monkeypatch
 ):
     ''' Truck production skips invalid trace level in environment. '''
@@ -513,8 +523,8 @@ def test_600_register_module_basic( vehicles, configuration, clean_builtins ):
     vehicles.register_module( name = 'test_module', flavors = flavors )
     assert 'test_module' in truck.modulecfgs
     assert (
-        truck .modulecfgs[ 'test_module' ]
-        .flavors[ 'test' ].prefix_emitter == 'Test| ' )
+        truck.modulecfgs[ 'test_module' ].flavors[ 'test' ].prefix_emitter
+        == 'Test| ' )
 
 
 def test_601_register_module_multiple(
@@ -526,9 +536,9 @@ def test_601_register_module_multiple(
         printers.produce_simple_printer, simple_output )
     truck = vehicles.install(
         trace_levels = { __package__: 0 },
-        active_flavors = { 'foo' },
+        active_flavors = { __package__: vehicles.omniflavor },
         printer_factory = printer_factory )
-    vehicles.register_module( name = __package__ )  # Default config
+    vehicles.register_module( name = __package__ )
     flavors = {
         'foo': configuration.FlavorConfiguration( prefix_emitter = 'foo:: ' ) }
     vehicles.register_module( name = __name__, flavors = flavors )
@@ -575,7 +585,7 @@ def test_640_register_module_full_config(
         printers.produce_simple_printer, simple_output )
     truck = vehicles.install(
         printer_factory = printer_factory,
-        trace_levels = 0, active_flavors = { 'info' } )
+        trace_levels = 0, active_flavors = vehicles.omniflavor )
     flavors = { 'info': configuration.FlavorConfiguration( ) }
     def custom_formatter( ctrl, mname, flavor ):
         return lambda x: f"Custom: {x}"

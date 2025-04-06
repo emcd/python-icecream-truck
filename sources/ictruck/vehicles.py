@@ -54,6 +54,15 @@ builtins_alias_default: __.typx.Annotated[
 ] = 'ictr'
 
 
+class Omniflavor( __.enum.Enum ):
+    ''' Singleton to match all active flavors. '''
+
+    Instance = __.enum.auto( )
+
+
+omniflavor: Omniflavor = Omniflavor.Instance
+
+
 class Truck( metaclass = __.ImmutableCompleteDataclass ):
     ''' Vends flavors of Icecream debugger. '''
 
@@ -137,7 +146,9 @@ class Truck( metaclass = __.ImmutableCompleteDataclass ):
         elif isinstance( flavor, str ): # pragma: no branch
             active_flavors = (
                 _calculate_effective_flavors( self.active_flavors, mname ) )
-            debugger.enabled = flavor in active_flavors
+            debugger.enabled = (
+                isinstance( active_flavors, Omniflavor )
+                or flavor in active_flavors )
         with self._debuggers_lock:
             self._debuggers[ cache_index ] = debugger
         return debugger
@@ -183,9 +194,12 @@ class Truck( metaclass = __.ImmutableCompleteDataclass ):
         return self
 
 
-ActiveFlavors: __.typx.TypeAlias = frozenset[ _cfg.Flavor ]
-ActiveFlavorsLiberal: __.typx.TypeAlias = (
-    __.cabc.Sequence[ _cfg.Flavor ] | __.cabc.Set[ _cfg.Flavor ] )
+ActiveFlavors: __.typx.TypeAlias = Omniflavor | frozenset[ _cfg.Flavor ]
+ActiveFlavorsLiberal: __.typx.TypeAlias = __.typx.Union[
+    Omniflavor,
+    __.cabc.Sequence[ _cfg.Flavor ],
+    __.cabc.Set[ _cfg.Flavor ],
+]
 ActiveFlavorsRegistry: __.typx.TypeAlias = (
     __.ImmutableDictionary[ str | None, ActiveFlavors ] )
 ActiveFlavorsRegistryLiberal: __.typx.TypeAlias = (
@@ -348,34 +362,16 @@ def produce_truck( # noqa: PLR0913
     ''' Produces icecream truck with some shorthand argument values. '''
     # TODO: Deeper validation of active flavors and trace levels.
     # TODO: Deeper validation of printer factory.
-    nomargs: dict[ str, __.typx.Any ] = { }
+    initargs: dict[ str, __.typx.Any ] = { }
     if not __.is_absent( generalcfg ):
-        nomargs[ 'generalcfg' ] = generalcfg
+        initargs[ 'generalcfg' ] = generalcfg
     if not __.is_absent( printer_factory ):
-        nomargs[ 'printer_factory' ] = printer_factory
-    if not __.is_absent( active_flavors ):
-        if isinstance( active_flavors, ( __.cabc.Sequence,  __.cabc.Set ) ):
-            nomargs[ 'active_flavors' ] = __.ImmutableDictionary(
-                { None: frozenset( active_flavors ) } )
-        else:
-            nomargs[ 'active_flavors' ] = __.ImmutableDictionary( {
-                mname: frozenset( flavors )
-                for mname, flavors in active_flavors.items( ) } )
-    elif evname_active_flavors is not None:
-        nomargs[ 'active_flavors' ] = (
-            active_flavors_from_environment( evname = evname_active_flavors ) )
-    if not __.is_absent( trace_levels ):
-        if isinstance( trace_levels, int ):
-            nomargs[ 'trace_levels' ] = __.ImmutableDictionary(
-                { None: trace_levels } )
-        else:
-            trace_levels_: TraceLevelsRegistryLiberal = { None: -1 }
-            trace_levels_.update( trace_levels )
-            nomargs[ 'trace_levels' ] = __.ImmutableDictionary( trace_levels_ )
-    elif evname_trace_levels is not None:
-        nomargs[ 'trace_levels' ] = (
-            trace_levels_from_environment( evname = evname_trace_levels ) )
-    return Truck( **nomargs )
+        initargs[ 'printer_factory' ] = printer_factory
+    _add_truck_initarg_active_flavors(
+        initargs, active_flavors, evname_active_flavors )
+    _add_truck_initarg_trace_levels(
+        initargs, trace_levels, evname_trace_levels )
+    return Truck( **initargs )
 
 
 @_validate_arguments
@@ -429,11 +425,14 @@ def active_flavors_from_environment(
         if not part: continue
         if ':' in part:
             mname, flavors = part.split( ':', 1 )
-            # TODO: Parse '*' to special "all flavors" object.
-            active_flavors[ mname ] = flavors.split( ',' )
-        else: active_flavors[ None ] = part.split( ',' )
+        else: mname, flavors = None, part
+        match flavors:
+            case '*': active_flavors[ mname ] = omniflavor
+            case _: active_flavors[ mname ] = flavors.split( ',' )
     return __.ImmutableDictionary( {
-        mname: frozenset( flavors )
+        mname:
+            flavors if isinstance( flavors, Omniflavor )
+            else frozenset( flavors )
         for mname, flavors in active_flavors.items( ) } )
 
 
@@ -457,14 +456,60 @@ def trace_levels_from_environment(
     return __.ImmutableDictionary( trace_levels )
 
 
+def _add_truck_initarg_active_flavors(
+    initargs: dict[ str, __.typx.Any ],
+    active_flavors: ProduceTruckActiveFlavorsArgument = __.absent,
+    evname_active_flavors: ProduceTruckEvnActiveFlavorsArgument = __.absent,
+) -> None:
+    name = 'active_flavors'
+    if not __.is_absent( active_flavors ):
+        if isinstance( active_flavors, Omniflavor ):
+            initargs[ name ] = __.ImmutableDictionary(
+                { None: active_flavors } )
+        elif isinstance( active_flavors, ( __.cabc.Sequence,  __.cabc.Set ) ):
+            initargs[ name ] = __.ImmutableDictionary(
+                { None: frozenset( active_flavors ) } )
+        else:
+            initargs[ name ] = __.ImmutableDictionary( {
+                mname:
+                    flavors if isinstance( flavors, Omniflavor )
+                    else frozenset( flavors )
+                for mname, flavors in active_flavors.items( ) } )
+    elif evname_active_flavors is not None:
+        initargs[ name ] = (
+            active_flavors_from_environment( evname = evname_active_flavors ) )
+
+
+def _add_truck_initarg_trace_levels(
+    initargs: dict[ str, __.typx.Any ],
+    trace_levels: ProduceTruckTraceLevelsArgument = __.absent,
+    evname_trace_levels: ProduceTruckEvnTraceLevelsArgument = __.absent,
+) -> None:
+    name = 'trace_levels'
+    if not __.is_absent( trace_levels ):
+        if isinstance( trace_levels, int ):
+            initargs[ name ] = __.ImmutableDictionary( { None: trace_levels } )
+        else:
+            trace_levels_: TraceLevelsRegistryLiberal = { None: -1 }
+            trace_levels_.update( trace_levels )
+            initargs[ name ] = __.ImmutableDictionary( trace_levels_ )
+    elif evname_trace_levels is not None:
+        initargs[ name ] = (
+            trace_levels_from_environment( evname = evname_trace_levels ) )
+
+
 def _calculate_effective_flavors(
     flavors: ActiveFlavorsRegistry, mname: str
 ) -> ActiveFlavors:
-    result = set( flavors.get( None, frozenset( ) ) )
+    result_ = flavors.get( None ) or frozenset( )
+    if isinstance( result_, Omniflavor ): return result_
+    result = result_
     for mname_ in _iterate_module_name_ancestry( mname ):
         if mname_ in flavors:
-            result |= set( flavors[ mname_ ] )
-    return frozenset( result )
+            result_ = flavors.get( mname_ ) or frozenset( )
+            if isinstance( result_, Omniflavor ): return result_
+            result |= result_
+    return result
 
 
 def _calculate_effective_trace_level(
