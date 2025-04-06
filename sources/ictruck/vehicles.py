@@ -39,8 +39,8 @@ _installer_lock: __.threads.Lock = __.threads.Lock( )
 _registrar_lock: __.threads.Lock = __.threads.Lock( )
 _self_modulecfg: _cfg.ModuleConfiguration = _cfg.ModuleConfiguration(
     flavors = __.ImmutableDictionary(
-        note = _cfg.FlavorConfiguration( prefix_emitter = 'NOTE' ),
-        error = _cfg.FlavorConfiguration( prefix_emitter = 'ERROR' ) ) )
+        note = _cfg.FlavorConfiguration( prefix_emitter = 'NOTE| ' ),
+        error = _cfg.FlavorConfiguration( prefix_emitter = 'ERROR| ' ) ) )
 _validate_arguments = (
     __.validate_arguments(
         globalvars = globals( ),
@@ -601,7 +601,7 @@ def _discover_invoker_module_name( ) -> str:
                 break
             raise _exceptions.ModuleInferenceFailure
         name = module.__name__
-        if not name.startswith( f"{__package__}." ): break
+        if not name.startswith( f"{__.package_name}." ): break
         frame = frame.f_back
     return name
 

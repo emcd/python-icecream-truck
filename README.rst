@@ -52,14 +52,14 @@
 
 🍦 **Flavorful Debugging** - A Python library which enhances the powerful and
 well-known `icecream <https://github.com/gruns/icecream>`_ package with
-flavored traces, module hierarchies, and custom outputs. Load up the truck and
-roll out delicious debug prints for applications and libraries alike!
+flavored traces, configuration hierarchies, customized outputs, ready-made
+recipes, and more.
 
 Key Features ⭐
 ===============================================================================
 
 🍒 **Debugger Flavors**: Numeric trace depths to control level of debugging
-detail (e.g., ``1``) or custom named flavors for specific subsystems (e.g.,
+detail (``0`` to ``9``) or custom named flavors for specific subsystems (e.g.,
 ``io``, ``reporting``), traditional logging levels (e.g., ``info``, ``error``),
 or whatever else you can imagine.
 
@@ -68,7 +68,7 @@ precise control over output prefixes, formatters, custom flavors, etc....
 
 🖨️ **Printer Factory**: Dyanamically associate output functions with debugger
 objects based on module name, flavor, etc.... Swap in customized ``print``,
-``logging``, ``rich.console``, or other sinks as desired.
+``logging``, or other sinks as desired.
 
 📚 **Library-Friendly**: Non-intrusive registration for libraries without
 stepping on application debugger/logging configuration.
@@ -103,8 +103,8 @@ greater detail.
 Universal Availability
 -------------------------------------------------------------------------------
 
-Install as a Python builtin (default alias, ``ictr``) and then use anywhere in
-your codebase:
+Install an icecream truck as a Python builtin (default alias, ``ictr``) and
+then use anywhere in your codebase:
 
 .. code-block:: python
 
@@ -126,12 +126,15 @@ used to register a default configuration:
     register_module( )  # Can pass custom configuration.
 
 When ``install`` is called, any module configurations that were previously
-registered via ``register_module`` are added to the installed truck. This
-allows an application to setup output after libraries have already registered
-their flavors, giving lots of initialization-time and runtime flexibility.
+registered via ``register_module`` are added to the installed icecream truck.
+This allows an application to setup output after libraries have already
+registered their flavors, giving lots of initialization-time and runtime
+flexibility.
 
 Recipes for Customization
 -------------------------------------------------------------------------------
+
+Please see the package documentation for available recipes.
 
 E.g., integrate ``icecream``-based introspection and formatting with the
 ``logging`` module in the Python standard library:

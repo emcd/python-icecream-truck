@@ -78,6 +78,9 @@ nitpick_ignore = [
     # Type annotation weirdnesses.
     ( 'py:class', "Doc" ),
     ( 'py:class', "absence.objects.AbsentSingleton" ),
+    ( 'py:class', "accretive.__.imports.Annotated" ),
+    ( 'py:class', "accretive.__.imports.H" ),
+    ( 'py:class', "accretive.__.imports.V" ),
     ( 'py:class', "accretive.dictionaries.Annotated" ),
     ( 'py:class', "accretive.dictionaries.Dictionary" ),
     ( 'py:class', "collections.abc.Annotated" ),
@@ -86,6 +89,7 @@ nitpick_ignore = [
     ( 'py:class', "ictruck.configuration.Annotated" ),
     ( 'py:class', "ictruck.recipes.rich.Annotated" ),
     ( 'py:class', "ictruck.recipes.sundae.Annotated" ),
+    ( 'py:class', "ictruck.vehicles.Annotated" ),
     ( 'py:class', "rich.console.Console" ),
     ( 'py:class', "rich.style.Style" ),
     ( 'py:class', "types.Annotated" ),
