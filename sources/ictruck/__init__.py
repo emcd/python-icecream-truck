@@ -29,6 +29,7 @@ from . import exceptions
 
 from .configuration import *
 from .exceptions import *
+from .printers import *
 from .vehicles import *
 
 
