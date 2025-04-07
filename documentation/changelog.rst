@@ -23,6 +23,25 @@ Release Notes
 
 .. towncrier release notes start
 
+Ictruck 1.2 (2025-04-06)
+========================
+
+Features
+--------
+
+- Default printer factory available in public API. Enhanced to strip ANSI C1
+  sequences (including colors and other character cell attributes) if output
+  stream is not attached to a TTY. Improved support for legacy Windows consoles.
+- New recipe: Sundae. Supports emoji and colorization of prefixes and
+  colorization of formatted values (via Rich). Trace depths follow a color
+  gradient. Custom flavors: ``note``, ``monition``, ``error``, ``abort``,
+  ``errorx`` (error with exception traceback), ``abort`` (abort with exception
+  traceback), ``success``, and ``future``.
+- Support configuration of icecream trucks via environment variables. By default,
+  the names are ``ICTRUCK_ACTIVE_FLAVORS`` and ``ICTRUCK_TRACE_LEVELS``, but
+  these are configurable during the production or installation of a truck.
+
+
 Ictruck 1.1 (2025-03-30)
 ========================
 
