@@ -45,8 +45,7 @@ isolation between different configurations.
 * ``ModuleConfiguration``: Defines per-module settings, including prefixes,
   flavors, and formatters, with inheritance from a global configuration.
 
-* ``produce_logging_truck``: Recipe for creating a ``Truck`` integrated with
-  Python’s `logging` module.
+* Assorted recipes for extending the core functionality of the package.
 
 The package organizes its functionality across several modules, providing
 exceptions, configuration hierarchies, and specialized output recipes.
@@ -64,10 +63,28 @@ Module ``ictruck.configuration``
 .. automodule:: ictruck.configuration
 
 
-Module ``ictruck.recipes``
+Module ``ictruck.printers``
 -------------------------------------------------------------------------------
 
-.. automodule:: ictruck.recipes
+.. automodule:: ictruck.printers
+
+
+Module ``ictruck.recipes.logging``
+-------------------------------------------------------------------------------
+
+.. automodule:: ictruck.recipes.logging
+
+
+Module ``ictruck.recipes.rich``
+-------------------------------------------------------------------------------
+
+.. automodule:: ictruck.recipes.rich
+
+
+Module ``ictruck.recipes.sundae``
+-------------------------------------------------------------------------------
+
+.. automodule:: ictruck.recipes.sundae
 
 
 Module ``ictruck.exceptions``

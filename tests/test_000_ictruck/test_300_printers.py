@@ -18,23 +18,35 @@
 #============================================================================#
 
 
-''' Flexible factory for Icecream debuggers. '''
+''' Tests for printers module. '''
 
 
-from . import __
-# --- BEGIN: Injected by Copier ---
-from . import exceptions
-# --- END: Injected by Copier ---
+import pytest
 
 
-from .configuration import *
-from .exceptions import *
-from .printers import *
-from .vehicles import *
+from . import PACKAGE_NAME, cache_import_module
 
 
-__version__ = '1.2rc0'
+@pytest.fixture( scope = 'session' )
+def printers( ):
+    ''' Provides printers module. '''
+    return cache_import_module( f"{PACKAGE_NAME}.printers" )
 
 
-# TODO: Also reclassify package modules as concealed.
-__.reclassify_modules_as_immutable( __name__ )
+def test_010_simple_printer_output( printers, simple_output ):
+    ''' Simple printer outputs text to target stream without ANSI colors. '''
+    printer = printers.produce_simple_printer( simple_output, 'test', 1 )
+    text_core = "Test output"
+    text = f"\x1b[33m{text_core}\x1b[0m"
+    printer( text )
+    assert simple_output.getvalue( ) == f"{text_core}\n"
+
+
+def test_011_simple_printer_color_output( printers, simple_output ):
+    ''' Simple printer outputs text to target stream with ANSI colors. '''
+    printer = (
+        printers.produce_simple_printer(
+            simple_output, 'test', 1, force_color = True ) )
+    text = "\x1b[33mTest output\x1b[0m"
+    printer( text )
+    assert simple_output.getvalue( ) == f"{text}\n"

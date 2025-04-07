@@ -28,8 +28,6 @@
 
 from __future__ import annotations
 
-import colorama as _colorama
-
 from rich.console import Console as _Console
 from rich.pretty import pretty_repr as _pretty_repr
 
@@ -51,6 +49,7 @@ class ConsoleTextIoInvalidity( __.exceptions.Omnierror, TypeError ):
 
 class Modes( __.enum.Enum ):
     ''' Operation modes for Rich truck. '''
+
     Formatter = 'formatter'
     Printer = 'printer'
 
@@ -77,7 +76,7 @@ ProduceTruckStderrArgument: __.typx.TypeAlias = __.typx.Annotated[
 
 
 @_validate_arguments
-def install( # pylint: disable=too-many-arguments
+def install( # noqa: PLR0913
     alias: __.InstallAliasArgument = __.builtins_alias_default,
     flavors: __.ProduceTruckFlavorsArgument = __.absent,
     active_flavors: __.ProduceTruckActiveFlavorsArgument = __.absent,
@@ -87,7 +86,7 @@ def install( # pylint: disable=too-many-arguments
 ) -> __.Truck:
     ''' Produces truck and installs it into builtins with alias.
 
-        Replaces an existing truck, preserving its module configurations.
+        Replaces an existing truck, preserving global module configurations.
 
         Library developers should call :py:func:`__.register_module` instead.
     '''
@@ -103,11 +102,9 @@ def install( # pylint: disable=too-many-arguments
 @_validate_arguments
 def produce_console_formatter(
     console: _Console,
-    # pylint: disable=unused-argument
     control: __.FormatterControl,
     mname: str,
     flavor: int | str,
-    # pylint: enable=unused-argument
 ) -> __.Formatter:
     ''' Produces formatter which uses Rich highlighter and prettier. '''
     return __.funct.partial( _console_format, console )
@@ -115,12 +112,9 @@ def produce_console_formatter(
 
 @_validate_arguments
 def produce_console_printer(
-    console: _Console,
-    # pylint: disable=unused-argument
-    mname: str,
-    flavor: __.Flavor,
-    # pylint: enable=unused-argument
+    console: _Console, mname: str, flavor: __.Flavor
 ) -> __.Printer:
+    # TODO: Remove from recipe. Should always use simple printer.
     ''' Produces a printer that uses Rich console printing.
 
         .. note::
@@ -129,31 +123,15 @@ def produce_console_printer(
             causing visual artifacts. Be careful to use this only with "safe"
             formatters.
     '''
-    return __.funct.partial( _console_print, console )
+    return console.print
 
 
 @_validate_arguments
 def produce_pretty_formatter(
-    # pylint: disable=unused-argument
-    control: __.FormatterControl,
-    mname: str,
-    flavor: int | str,
-    # pylint: enable=unused-argument
+    control: __.FormatterControl, mname: str, flavor: int | str
 ) -> __.Formatter:
     ''' Produces formatter which uses Rich prettier. '''
     return _pretty_repr
-
-
-@_validate_arguments
-def produce_simple_printer(
-    target: __.io.TextIOBase,
-    # pylint: disable=unused-argument
-    mname: str,
-    flavor: __.Flavor,
-    # pylint: enable=unused-argument
-) -> __.Printer:
-    ''' Produces printer which uses standard Python 'print'. '''
-    return __.funct.partial( _simple_print, target = target )
 
 
 @_validate_arguments
@@ -201,12 +179,6 @@ def _console_format( console: _Console, value: __.typx.Any ) -> str:
     return capture.get( )
 
 
-def _console_print( console: _Console, text: str ) -> None:
-    with _windows_replace_ansi_sgr( ):
-        # console.print( text, markup = False )
-        console.print( text )
-
-
 def _produce_formatter_truck(
     flavors: __.ProduceTruckFlavorsArgument = __.absent,
     active_flavors: __.ProduceTruckActiveFlavorsArgument = __.absent,
@@ -226,7 +198,8 @@ def _produce_formatter_truck(
     nomargs: dict[ str, __.typx.Any ] = dict(
         active_flavors = active_flavors,
         generalcfg = generalcfg,
-        printer_factory = __.funct.partial( produce_simple_printer, target ),
+        printer_factory = __.funct.partial(
+            __.produce_simple_printer, target ),
         trace_levels = trace_levels )
     return __.produce_truck( **nomargs )
 
@@ -258,19 +231,3 @@ def _produce_printer_truck(
 #     # TODO: Detect if terminal supports 256 colors or true color.
 #     #       Make spectrum of hues for trace depths, if so.
 #     return _icecream.DEFAULT_PREFIX
-
-
-def _simple_print( text: str, target: __.io.TextIOBase ) -> None:
-    with _windows_replace_ansi_sgr( ):
-        print( text, file = target )
-
-
-@__.ctxl.contextmanager
-def _windows_replace_ansi_sgr( ) -> __.typx.Generator[ None, None, None ]:
-    # Note: Copied from the 'icecream' sources.
-    #       Converts ANSI SGR sequences to Windows API calls on older
-    #       command terminals which do not have proper ANSI SGR support.
-    #       Otherwise, rendering on terminal occurs normally.
-    _colorama.init( )
-    yield
-    _colorama.deinit( )

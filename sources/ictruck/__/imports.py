@@ -20,23 +20,27 @@
 
 ''' Common imports and type aliases used throughout the package. '''
 
-# pylint: disable=unused-import
 # ruff: noqa: F401
 
 
 from __future__ import annotations
 
-import collections.abc as cabc
-import contextlib as ctxl
-import dataclasses as dcls
-import enum
-import functools as funct
-import inspect
-import io
-import itertools as itert
-import sys
-import threading as threads
-import types
+import collections.abc as   cabc
+import contextlib as        ctxl
+import dataclasses as       dcls
+import                      enum
+import functools as         funct
+import                      inspect
+import                      io
+import itertools as         itert
+import                      locale
+import                      os
+import                      re
+import                      sys
+import threading as         threads
+import                      time
+import                      types
+import                      warnings
 
 import typing_extensions as typx
 # --- BEGIN: Injected by Copier ---
@@ -53,4 +57,27 @@ from frigid.qaliases import (
 )
 
 
+H = typx.TypeVar( 'H', bound = cabc.Hashable ) # Hash Key
+V = typx.TypeVar( 'V' ) # Value
+
+
 ComparisonResult: typx.TypeAlias = bool | types.NotImplementedType
+DictionaryNominativeArgument: typx.TypeAlias = typx.Annotated[
+    V,
+    typx.Doc(
+        'Zero or more keyword arguments from which to initialize '
+        'dictionary data.' ),
+]
+DictionaryPositionalArgument: typx.TypeAlias = typx.Annotated[
+    cabc.Mapping[ H, V ] | cabc.Iterable[ tuple[ H, V ] ],
+    typx.Doc(
+        'Zero or more iterables from which to initialize dictionary data. '
+        'Each iterable must be dictionary or sequence of key-value pairs. '
+        'Duplicate keys will result in an error.' ),
+]
+ExceptionInfo: typx.TypeAlias = tuple[
+    type[ BaseException ] | None,
+    BaseException | None,
+    types.TracebackType | None ]
+
+package_name = __name__.split( '.', maxsplit = 1 )[ 0 ]

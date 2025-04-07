@@ -57,13 +57,12 @@ def validate_arguments(
     return decorate
 
 
-# pylint: disable=eval-used
 def _reduce_annotation(
     annotation: __.typx.Any, globalvars: dict[ str, __.typx.Any ]
 ) -> tuple[ type, ... ]:
     if isinstance( annotation, str ):
         return _reduce_annotation(
-            eval( annotation, globalvars ), # nosec: B307
+            eval( annotation, globalvars ), # noqa: S307
             globalvars = globalvars )
     origin = __.typx.get_origin( annotation )
     if isinstance( annotation, __.types.UnionType ) or origin is __.typx.Union:
@@ -77,4 +76,3 @@ def _reduce_annotation(
             annotation.__origin__, globalvars = globalvars )
     # TODO? Other special forms.
     return ( origin, )
-# pylint: enable=eval-used

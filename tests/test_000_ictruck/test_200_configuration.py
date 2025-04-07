@@ -32,7 +32,7 @@ CLASS_NAMES = (
 
 
 @pytest.fixture
-def configuration( scope = 'session' ): # pylint: disable=unused-argument
+def configuration( scope = 'session' ):
     ''' Provides configuration module. '''
     return cache_import_module( f"{PACKAGE_NAME}.configuration" )
 
@@ -67,10 +67,8 @@ def test_002_vehicle_defaults( configuration ):
 @pytest.mark.parametrize( 'class_name', CLASS_NAMES )
 def test_010_formatter_factory( configuration, class_name ):
     ''' Argument formatter_factory can be customized. '''
-    # pylint: disable=unused-argument
     def custom_formatter( ctrl, mname, flavor ):
         return lambda arg: f'Custom: {arg}'
-    # pylint: enable=unused-argument
     obj = getattr( configuration, class_name )(
         formatter_factory = custom_formatter )
     control = configuration.FormatterControl( )

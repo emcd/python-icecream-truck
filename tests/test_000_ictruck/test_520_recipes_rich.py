@@ -20,8 +20,6 @@
 
 ''' Tests for rich recipes module. '''
 
-# pylint: disable=unused-argument
-
 
 import sys
 
@@ -66,15 +64,7 @@ def test_011_console_formatter_output( recipes, configuration, simple_output ):
     assert '\n' in result  # Rich formatting includes newlines
 
 
-def test_012_simple_printer_output( recipes, simple_output ):
-    ''' Simple printer outputs text to target stream. '''
-    printer = recipes.produce_simple_printer( simple_output, 'test', 1 )
-    text = "Test output"
-    printer( text )
-    assert simple_output.getvalue( ) == "Test output\n"
-
-
-def test_013_console_printer_output( recipes, simple_output ):
+def test_012_console_printer_output( recipes, simple_output ):
     ''' Console printer outputs text with Rich styling. '''
     console = Console( file = simple_output, force_terminal = True )
     printer = recipes.produce_console_printer( console, 'test', 1 )
@@ -141,7 +131,7 @@ def test_102_produce_truck_printer_mode(
     assert '\n' in output
 
 
-def test_103_produce_truck_active_flavors( # pylint: disable=too-many-arguments,too-many-locals
+def test_103_produce_truck_active_flavors(
     recipes, base, configuration, vehicles, simple_output, monkeypatch
 ):
     ''' Truck factory respects active flavors in Formatter mode. '''
@@ -208,7 +198,7 @@ def test_202_install_truck_trace_levels(
     assert "Trace 2" not in output
 
 
-def test_300_register_module( # pylint: disable=too-many-arguments
+def test_300_register_module(
     recipes, configuration, vehicles,
     simple_output, clean_builtins, monkeypatch,
 ):

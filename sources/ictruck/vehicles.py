@@ -20,12 +20,6 @@
 
 ''' Vehicles which vend flavors of Icecream debugger. '''
 
-# TODO: Always add module configuration for 'ictruck' itself to trucks.
-#       This allows for it to trace much of its own execution if its flavors
-#       are activated. Suggested flavors:
-#           ictruck-note: Noteworthy event.
-#           ictruck-error: Error.
-
 
 from __future__ import annotations
 
@@ -34,31 +28,63 @@ import icecream as _icecream
 from . import __
 from . import configuration as _cfg
 from . import exceptions as _exceptions
+from . import printers as _printers
 
 
-# pylint: disable=import-error,import-private-name
 if __.typx.TYPE_CHECKING: # pragma: no cover
     import _typeshed
-# pylint: enable=import-error,import-private-name
 
 
 _installer_lock: __.threads.Lock = __.threads.Lock( )
+_registrar_lock: __.threads.Lock = __.threads.Lock( )
+_self_modulecfg: _cfg.ModuleConfiguration = _cfg.ModuleConfiguration(
+    flavors = __.ImmutableDictionary(
+        note = _cfg.FlavorConfiguration( prefix_emitter = 'NOTE| ' ),
+        error = _cfg.FlavorConfiguration( prefix_emitter = 'ERROR| ' ) ) )
 _validate_arguments = (
     __.validate_arguments(
         globalvars = globals( ),
         errorclass = _exceptions.ArgumentClassInvalidity ) )
 
 
+class ModulesConfigurationsRegistry(
+    __.AccretiveDictionary[ str, _cfg.ModuleConfiguration ]
+):
+    ''' Accretive dictionary specifically for module registrations. '''
+
+    def __init__(
+        self,
+        *iterables: __.DictionaryPositionalArgument[
+            str, _cfg.ModuleConfiguration ],
+        **entries: __.DictionaryNominativeArgument[
+            _cfg.ModuleConfiguration ],
+    ):
+        super( ).__init__( { __.package_name: _self_modulecfg } )
+        self.update( *iterables, **entries )
+
+
+class Omniflavor( __.enum.Enum ):
+    ''' Singleton to match any flavor. '''
+
+    Instance = __.enum.auto( )
+
+
 builtins_alias_default: __.typx.Annotated[
     str,
     __.typx.Doc( ''' Default alias for global truck in builtins module. ''' ),
 ] = 'ictr'
+modulecfgs: __.typx.Annotated[
+    ModulesConfigurationsRegistry,
+    __.typx.Doc( ''' Global registry of module configurations. ''' ),
+] = ModulesConfigurationsRegistry( )
+omniflavor: __.typx.Annotated[
+    Omniflavor, __.typx.Doc( ''' Matches any flavor. ''' )
+] = Omniflavor.Instance
 
 
 class Truck( metaclass = __.ImmutableCompleteDataclass ):
     ''' Vends flavors of Icecream debugger. '''
 
-    # pylint: disable=invalid-field-call
     active_flavors: __.typx.Annotated[
         ActiveFlavorsRegistry,
         __.typx.Doc(
@@ -78,7 +104,7 @@ class Truck( metaclass = __.ImmutableCompleteDataclass ):
             ''' ),
     ] = __.dcls.field( default_factory = _cfg.VehicleConfiguration )
     modulecfgs: __.typx.Annotated[
-        __.AccretiveDictionary[ str, _cfg.ModuleConfiguration ],
+        ModulesConfigurationsRegistry,
         __.typx.Doc(
             ''' Registry of per-module configurations.
 
@@ -86,9 +112,9 @@ class Truck( metaclass = __.ImmutableCompleteDataclass ):
                 Top-level packages inherit from general instance
                 configruration.
             ''' ),
-    ] = __.dcls.field( default_factory = __.AccretiveDictionary ) # pyright: ignore
+    ] = __.dcls.field( default_factory = lambda: modulecfgs )
     printer_factory: __.typx.Annotated[
-        PrinterFactoryUnion,
+        _printers.PrinterFactoryUnion,
         __.typx.Doc(
             ''' Factory which produces callables to output text somewhere.
 
@@ -97,9 +123,7 @@ class Truck( metaclass = __.ImmutableCompleteDataclass ):
                 return a callable which takes one argument, the string
                 produced by a formatter.
             ''' ),
-    ] = __.dcls.field(
-        default_factory = (
-            lambda: lambda mname, flavor: _icecream.DEFAULT_OUTPUT_FUNCTION ) )
+    ] = __.funct.partial( _printers.produce_simple_printer, __.sys.stderr )
     trace_levels: __.typx.Annotated[
         TraceLevelsRegistry,
         __.typx.Doc(
@@ -120,16 +144,21 @@ class Truck( metaclass = __.ImmutableCompleteDataclass ):
         __.threads.Lock,
         __.typx.Doc( ''' Access lock for cache of debugger instances. ''' ),
     ] = __.dcls.field( default_factory = __.threads.Lock )
-    # pylint: enable=invalid-field-call
 
     @_validate_arguments
-    def __call__( self, flavor: _cfg.Flavor ) -> _icecream.IceCreamDebugger:
+    def __call__(
+        self,
+        flavor: _cfg.Flavor, *,
+        module_name: __.Absential[ str ] = __.absent,
+    ) -> _icecream.IceCreamDebugger:
         ''' Vends flavor of Icecream debugger. '''
-        mname = _discover_invoker_module_name( )
+        mname = (
+            _discover_invoker_module_name( ) if __.is_absent( module_name )
+            else module_name )
         cache_index = ( mname, flavor )
-        if cache_index in self._debuggers: # pylint: disable=unsupported-membership-test
-            with self._debuggers_lock: # pylint: disable=not-context-manager
-                return self._debuggers[ cache_index ] # pylint: disable=unsubscriptable-object
+        if cache_index in self._debuggers:
+            with self._debuggers_lock:
+                return self._debuggers[ cache_index ]
         configuration = _produce_ic_configuration( self, mname, flavor )
         control = _cfg.FormatterControl( )
         initargs = _calculate_ic_initargs(
@@ -142,16 +171,18 @@ class Truck( metaclass = __.ImmutableCompleteDataclass ):
         elif isinstance( flavor, str ): # pragma: no branch
             active_flavors = (
                 _calculate_effective_flavors( self.active_flavors, mname ) )
-            debugger.enabled = flavor in active_flavors
-        with self._debuggers_lock: # pylint: disable=not-context-manager
-            self._debuggers[ cache_index ] = debugger # pylint: disable=unsupported-assignment-operation
+            debugger.enabled = (
+                isinstance( active_flavors, Omniflavor )
+                or flavor in active_flavors )
+        with self._debuggers_lock:
+            self._debuggers[ cache_index ] = debugger
         return debugger
 
     @_validate_arguments
     def install( self, alias: str = builtins_alias_default ) -> __.typx.Self:
         ''' Installs truck into builtins with provided alias.
 
-            Replaces an existing truck, preserving its module configurations.
+            Replaces an existing truck. Preserves global module configurations.
 
             Library developers should call :py:func:`register_module` instead.
         '''
@@ -159,8 +190,8 @@ class Truck( metaclass = __.ImmutableCompleteDataclass ):
         with _installer_lock:
             truck_o = getattr( builtins, alias, None )
             if isinstance( truck_o, Truck ):
-                # TODO: self( 'ictruck-note' )( 'truck replacement', self )
-                self.modulecfgs.update( truck_o.modulecfgs )
+                self( 'note', module_name = __name__ )(
+                    'Installed truck is being replaced.' )
                 setattr( builtins, alias, self )
             else:
                 __.install_builtin_safely(
@@ -184,21 +215,23 @@ class Truck( metaclass = __.ImmutableCompleteDataclass ):
             name = _discover_invoker_module_name( )
         if __.is_absent( configuration ):
             configuration = _cfg.ModuleConfiguration( )
-        self.modulecfgs[ name ] = configuration # pylint: disable=unsupported-assignment-operation
+        with _registrar_lock:
+            self.modulecfgs[ name ] = configuration
         return self
 
 
-ActiveFlavors: __.typx.TypeAlias = frozenset[ _cfg.Flavor ]
-ActiveFlavorsLiberal: __.typx.TypeAlias = (
-    __.cabc.Sequence[ _cfg.Flavor ] | __.cabc.Set[ _cfg.Flavor ] )
+ActiveFlavors: __.typx.TypeAlias = Omniflavor | frozenset[ _cfg.Flavor ]
+ActiveFlavorsLiberal: __.typx.TypeAlias = __.typx.Union[
+    Omniflavor,
+    __.cabc.Sequence[ _cfg.Flavor ],
+    __.cabc.Set[ _cfg.Flavor ],
+]
 ActiveFlavorsRegistry: __.typx.TypeAlias = (
     __.ImmutableDictionary[ str | None, ActiveFlavors ] )
 ActiveFlavorsRegistryLiberal: __.typx.TypeAlias = (
     __.cabc.Mapping[ str | None, ActiveFlavorsLiberal ] )
-Printer: __.typx.TypeAlias = __.cabc.Callable[ [ str ], None ]
-PrinterFactory: __.typx.TypeAlias = (
-    __.cabc.Callable[ [ str, _cfg.Flavor ], Printer ] )
-PrinterFactoryUnion: __.typx.TypeAlias = __.io.TextIOBase | PrinterFactory
+ModulesConfigurationsRegistryLiberal: __.typx.TypeAlias = (
+    __.cabc.Mapping[ str, _cfg.ModuleConfiguration ] )
 TraceLevelsRegistry: __.typx.TypeAlias = (
     __.ImmutableDictionary[ str | None, int ] )
 TraceLevelsRegistryLiberal: __.typx.TypeAlias = (
@@ -220,6 +253,36 @@ ProduceTruckActiveFlavorsArgument: __.typx.TypeAlias = __.typx.Annotated[
             Module-specific entries merge with global entries.
         ''' ),
 ]
+ProduceTruckEvnActiveFlavorsArgument: __.typx.TypeAlias = __.typx.Annotated[
+    __.Absential[ __.typx.Optional[ str ] ],
+    __.typx.Doc(
+        ''' Name of environment variable for active flavors or ``None``.
+
+            If absent, then a default environment variable name is used.
+
+            If ``None``, then active flavors are not parsed from the process
+            environment.
+
+            If active flavors are supplied directly to a function,
+            which also accepts this argument, then active flavors are not
+            parsed from the process environment.
+        ''' ),
+]
+ProduceTruckEvnTraceLevelsArgument: __.typx.TypeAlias = __.typx.Annotated[
+    __.Absential[ __.typx.Optional[ str ] ],
+    __.typx.Doc(
+        ''' Name of environment variable for trace levels or ``None``.
+
+            If absent, then a default environment variable name is used.
+
+            If ``None``, then trace levels are not parsed from the process
+            environment.
+
+            If trace levels are supplied directly to a function,
+            which also accepts this argument, then trace levels are not
+            parsed from the process environment.
+        ''' ),
+]
 ProduceTruckFlavorsArgument: __.typx.TypeAlias = __.typx.Annotated[
     __.Absential[ _cfg.FlavorsRegistryLiberal ],
     __.typx.Doc( ''' Registry of flavor identifiers to configurations. ''' ),
@@ -233,8 +296,16 @@ ProduceTruckGeneralcfgArgument: __.typx.TypeAlias = __.typx.Annotated[
             defaults to a suitable configuration for application use.
         ''' ),
 ]
+ProduceTruckModulecfgsArgument: __.typx.TypeAlias = __.typx.Annotated[
+    __.Absential[ ModulesConfigurationsRegistryLiberal ],
+    __.typx.Doc(
+        ''' Module configurations for the truck.
+
+            If absent, defaults to global modules registry.
+        ''' ),
+]
 ProduceTruckPrinterFactoryArgument: __.typx.TypeAlias = __.typx.Annotated[
-    __.Absential[ PrinterFactoryUnion ],
+    __.Absential[ _printers.PrinterFactoryUnion ],
     __.typx.Doc(
         ''' Factory which produces callables to output text somewhere.
 
@@ -288,17 +359,62 @@ RegisterModulePrefixEmitterArgument: __.typx.TypeAlias = __.typx.Annotated[
         ''' ),
 ]
 
+
+def active_flavors_from_environment(
+    evname: __.Absential[ str ] = __.absent
+) -> ActiveFlavorsRegistry:
+    ''' Extracts active flavors from named environment variable. '''
+    active_flavors: ActiveFlavorsRegistryLiberal = { }
+    name = 'ICTRUCK_ACTIVE_FLAVORS' if __.is_absent( evname ) else evname
+    value = __.os.getenv( name, '' )
+    for part in value.split( '+' ):
+        if not part: continue
+        if ':' in part:
+            mname, flavors = part.split( ':', 1 )
+        else: mname, flavors = None, part
+        match flavors:
+            case '*': active_flavors[ mname ] = omniflavor
+            case _: active_flavors[ mname ] = flavors.split( ',' )
+    return __.ImmutableDictionary( {
+        mname:
+            flavors if isinstance( flavors, Omniflavor )
+            else frozenset( flavors )
+        for mname, flavors in active_flavors.items( ) } )
+
+
+def trace_levels_from_environment(
+    evname: __.Absential[ str ] = __.absent
+) -> TraceLevelsRegistry:
+    ''' Extracts trace levels from named environment variable. '''
+    trace_levels: TraceLevelsRegistryLiberal = { None: -1 }
+    name = 'ICTRUCK_TRACE_LEVELS' if __.is_absent( evname ) else evname
+    value = __.os.getenv( name, '' )
+    for part in value.split( '+' ):
+        if not part: continue
+        if ':' in part: mname, level = part.split( ':', 1 )
+        else: mname, level = None, part
+        if not level.isdigit( ):
+            __.warnings.warn(
+                f"Non-integer trace level {level!r} "
+                f"in environment variable {name!r}." )
+            continue
+        trace_levels[ mname ] = int( level )
+    return __.ImmutableDictionary( trace_levels )
+
+
 @_validate_arguments
-def install(
+def install( # noqa: PLR0913
     alias: InstallAliasArgument = builtins_alias_default,
     active_flavors: ProduceTruckActiveFlavorsArgument = __.absent,
     generalcfg: ProduceTruckGeneralcfgArgument = __.absent,
     printer_factory: ProduceTruckPrinterFactoryArgument = __.absent,
     trace_levels: ProduceTruckTraceLevelsArgument = __.absent,
+    evname_active_flavors: ProduceTruckEvnActiveFlavorsArgument = __.absent,
+    evname_trace_levels: ProduceTruckEvnTraceLevelsArgument = __.absent,
 ) -> Truck:
     ''' Produces truck and installs it into builtins with alias.
 
-        Replaces an existing truck, preserving its module configurations.
+        Replaces an existing truck, preserving global module configurations.
 
         Library developers should call :py:func:`register_module` instead.
     '''
@@ -306,40 +422,39 @@ def install(
         active_flavors = active_flavors,
         generalcfg = generalcfg,
         printer_factory = printer_factory,
-        trace_levels = trace_levels )
+        trace_levels = trace_levels,
+        evname_active_flavors = evname_active_flavors,
+        evname_trace_levels = evname_trace_levels )
     return truck.install( alias = alias )
 
 
 @_validate_arguments
-def produce_truck(
+def produce_truck( # noqa: PLR0913
     active_flavors: ProduceTruckActiveFlavorsArgument = __.absent,
     generalcfg: ProduceTruckGeneralcfgArgument = __.absent,
+    modulecfgs: ProduceTruckModulecfgsArgument = __.absent,
     printer_factory: ProduceTruckPrinterFactoryArgument = __.absent,
     trace_levels: ProduceTruckTraceLevelsArgument = __.absent,
+    evname_active_flavors: ProduceTruckEvnActiveFlavorsArgument = __.absent,
+    evname_trace_levels: ProduceTruckEvnTraceLevelsArgument = __.absent,
 ) -> Truck:
     ''' Produces icecream truck with some shorthand argument values. '''
     # TODO: Deeper validation of active flavors and trace levels.
     # TODO: Deeper validation of printer factory.
-    nomargs: dict[ str, __.typx.Any ] = { }
+    initargs: dict[ str, __.typx.Any ] = { }
     if not __.is_absent( generalcfg ):
-        nomargs[ 'generalcfg' ] = generalcfg
+        initargs[ 'generalcfg' ] = generalcfg
+    if not __.is_absent( modulecfgs ):
+        initargs[ 'modulecfgs' ] = ModulesConfigurationsRegistry(
+            {   mname: configuration for mname, configuration
+                in modulecfgs.items( ) } )
     if not __.is_absent( printer_factory ):
-        nomargs[ 'printer_factory' ] = printer_factory
-    if not __.is_absent( active_flavors ):
-        if isinstance( active_flavors, ( __.cabc.Sequence,  __.cabc.Set ) ):
-            nomargs[ 'active_flavors' ] = __.ImmutableDictionary(
-                { None: frozenset( active_flavors ) } )
-        else:
-            nomargs[ 'active_flavors' ] = __.ImmutableDictionary( {
-                mname: frozenset( flavors )
-                for mname, flavors in active_flavors.items( ) } )
-    if not __.is_absent( trace_levels ):
-        if isinstance( trace_levels, int ):
-            nomargs[ 'trace_levels' ] = __.ImmutableDictionary(
-                { None: trace_levels } )
-        else:
-            nomargs[ 'trace_levels' ] = __.ImmutableDictionary( trace_levels )
-    return Truck( **nomargs )
+        initargs[ 'printer_factory' ] = printer_factory
+    _add_truck_initarg_active_flavors(
+        initargs, active_flavors, evname_active_flavors )
+    _add_truck_initarg_trace_levels(
+        initargs, trace_levels, evname_trace_levels )
+    return Truck( **initargs )
 
 
 @_validate_arguments
@@ -349,7 +464,7 @@ def register_module(
     formatter_factory: RegisterModuleFormatterFactoryArgument = __.absent,
     include_context: RegisterModuleIncludeContextArgument = __.absent,
     prefix_emitter: RegisterModulePrefixEmitterArgument = __.absent,
-) -> None:
+) -> _cfg.ModuleConfiguration:
     ''' Registers module configuration on the builtin truck.
 
         If no truck exists in builtins, installs one which produces null
@@ -362,7 +477,7 @@ def register_module(
     import builtins
     truck = getattr( builtins, builtins_alias_default, None )
     if not isinstance( truck, Truck ):
-        truck = Truck( printer_factory = lambda mname, flavor: lambda x: None )
+        truck = Truck( )
         __.install_builtin_safely(
             builtins_alias_default,
             truck,
@@ -377,17 +492,63 @@ def register_module(
     if not __.is_absent( prefix_emitter ):
         nomargs[ 'prefix_emitter' ] = prefix_emitter
     configuration = _cfg.ModuleConfiguration( **nomargs )
-    truck.register_module( name = name, configuration = configuration )
+    return truck.register_module( name = name, configuration = configuration )
+
+
+def _add_truck_initarg_active_flavors(
+    initargs: dict[ str, __.typx.Any ],
+    active_flavors: ProduceTruckActiveFlavorsArgument = __.absent,
+    evname_active_flavors: ProduceTruckEvnActiveFlavorsArgument = __.absent,
+) -> None:
+    name = 'active_flavors'
+    if not __.is_absent( active_flavors ):
+        if isinstance( active_flavors, Omniflavor ):
+            initargs[ name ] = __.ImmutableDictionary(
+                { None: active_flavors } )
+        elif isinstance( active_flavors, ( __.cabc.Sequence,  __.cabc.Set ) ):
+            initargs[ name ] = __.ImmutableDictionary(
+                { None: frozenset( active_flavors ) } )
+        else:
+            initargs[ name ] = __.ImmutableDictionary( {
+                mname:
+                    flavors if isinstance( flavors, Omniflavor )
+                    else frozenset( flavors )
+                for mname, flavors in active_flavors.items( ) } )
+    elif evname_active_flavors is not None:
+        initargs[ name ] = (
+            active_flavors_from_environment( evname = evname_active_flavors ) )
+
+
+def _add_truck_initarg_trace_levels(
+    initargs: dict[ str, __.typx.Any ],
+    trace_levels: ProduceTruckTraceLevelsArgument = __.absent,
+    evname_trace_levels: ProduceTruckEvnTraceLevelsArgument = __.absent,
+) -> None:
+    name = 'trace_levels'
+    if not __.is_absent( trace_levels ):
+        if isinstance( trace_levels, int ):
+            initargs[ name ] = __.ImmutableDictionary( { None: trace_levels } )
+        else:
+            trace_levels_: TraceLevelsRegistryLiberal = { None: -1 }
+            trace_levels_.update( trace_levels )
+            initargs[ name ] = __.ImmutableDictionary( trace_levels_ )
+    elif evname_trace_levels is not None:
+        initargs[ name ] = (
+            trace_levels_from_environment( evname = evname_trace_levels ) )
 
 
 def _calculate_effective_flavors(
     flavors: ActiveFlavorsRegistry, mname: str
 ) -> ActiveFlavors:
-    result = set( flavors.get( None, frozenset( ) ) )
+    result_ = flavors.get( None ) or frozenset( )
+    if isinstance( result_, Omniflavor ): return result_
+    result = result_
     for mname_ in _iterate_module_name_ancestry( mname ):
         if mname_ in flavors:
-            result |= set( flavors[ mname_ ] )
-    return frozenset( result )
+            result_ = flavors.get( mname_ ) or frozenset( )
+            if isinstance( result_, Omniflavor ): return result_
+            result |= result_
+    return result
 
 
 def _calculate_effective_trace_level(
@@ -413,7 +574,7 @@ def _calculate_ic_initargs(
     nomargs[ 'includeContext' ] = configuration[ 'include_context' ]
     if isinstance( truck.printer_factory, __.io.TextIOBase ):
         printer = __.funct.partial( print, file = truck.printer_factory )
-    else: printer = truck.printer_factory( mname, flavor ) # pylint: disable=not-callable
+    else: printer = truck.printer_factory( mname, flavor )
     nomargs[ 'outputFunction' ] = printer
     prefix_emitter = configuration[ 'prefix_emitter' ]
     nomargs[ 'prefix' ] = (
@@ -435,14 +596,12 @@ def _discover_invoker_module_name( ) -> str:
     while frame: # pragma: no branch
         module = __.inspect.getmodule( frame )
         if module is None:
-            # pylint: disable=magic-value-comparison
             if '<stdin>' == frame.f_code.co_filename: # pragma: no cover
                 name = '__main__'
                 break
-            # pylint: enable=magic-value-comparison
             raise _exceptions.ModuleInferenceFailure
         name = module.__name__
-        if not name.startswith( f"{__package__}." ): break
+        if not name.startswith( f"{__.package_name}." ): break
         frame = frame.f_back
     return name
 

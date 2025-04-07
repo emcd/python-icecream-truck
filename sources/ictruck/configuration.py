@@ -89,7 +89,6 @@ class FlavorConfiguration( metaclass = __.ImmutableCompleteDataclass ):
 class ModuleConfiguration( metaclass = __.ImmutableCompleteDataclass ):
     ''' Per-module or per-package configuration. '''
 
-    # pylint: disable=invalid-field-call
     flavors: __.typx.Annotated[
         FlavorsRegistry,
         __.typx.Doc(
@@ -125,13 +124,11 @@ class ModuleConfiguration( metaclass = __.ImmutableCompleteDataclass ):
                 Default ``None`` inherits from cumulative configuration.
             ''' ),
     ] = None
-    # pylint: enable=invalid-field-call
 
 
 class VehicleConfiguration( metaclass = __.ImmutableCompleteDataclass ):
     ''' Per-vehicle configuration. '''
 
-    # pylint: disable=invalid-field-call
     flavors: __.typx.Annotated[
         FlavorsRegistry,
         __.typx.Doc(
@@ -158,7 +155,6 @@ class VehicleConfiguration( metaclass = __.ImmutableCompleteDataclass ):
                 arguments. Returns prefix string.
             ''' ),
     ] = _icecream.DEFAULT_PREFIX
-    # pylint: enable=invalid-field-call
 
 
 Flavor: __.typx.TypeAlias = int | str

@@ -7,15 +7,13 @@
         https://jareddillard.com/blog/common-ways-to-customize-sphinx-themes.html
 '''
 
-# mypy: ignore-errors
-# pylint: disable=consider-using-namedtuple-or-dataclass
 # ruff: noqa: E402,F401
 
 
 def _calculate_copyright_notice( ):
-    from datetime import datetime as DateTime
+    from datetime import datetime as DateTime, timezone as TimeZone
     first_year = 2025
-    now_year = DateTime.utcnow( ).year
+    now_year = DateTime.now( TimeZone.utc ).year
     if first_year < now_year: year_range = f"{first_year}-{now_year}"
     else: year_range = str( first_year )
     return f"{year_range}, Eric McDonald"
@@ -36,7 +34,7 @@ def _import_version( ):
 
 project = 'python-icecream-truck'
 author = 'Eric McDonald'
-copyright = ( # pylint: disable=redefined-builtin
+copyright = ( # noqa: A001
     _calculate_copyright_notice( ) )
 release = version = _import_version( )
 
@@ -80,15 +78,24 @@ nitpick_ignore = [
     # Type annotation weirdnesses.
     ( 'py:class', "Doc" ),
     ( 'py:class', "absence.objects.AbsentSingleton" ),
+    ( 'py:class', "accretive.__.imports.Annotated" ),
+    ( 'py:class', "accretive.__.imports.H" ),
+    ( 'py:class', "accretive.__.imports.V" ),
     ( 'py:class', "accretive.dictionaries.Annotated" ),
     ( 'py:class', "accretive.dictionaries.Dictionary" ),
     ( 'py:class', "collections.abc.Annotated" ),
     ( 'py:class', "frigid.dictionaries.Annotated" ),
     ( 'py:class', "frigid.dictionaries.Dictionary" ),
     ( 'py:class', "ictruck.configuration.Annotated" ),
+    ( 'py:class', "ictruck.recipes.rich.Annotated" ),
+    ( 'py:class', "ictruck.recipes.sundae.Annotated" ),
+    ( 'py:class', "ictruck.vehicles.Annotated" ),
+    ( 'py:class', "rich.console.Console" ),
+    ( 'py:class', "rich.style.Style" ),
     ( 'py:class', "types.Annotated" ),
     ( 'py:class', "typing_extensions.Any" ),
     ( 'py:class', "typing_extensions.Self" ),
+    ( 'py:func', "__.register_module" ),
 ]
 
 # -- Options for linkcheck builder -------------------------------------------
