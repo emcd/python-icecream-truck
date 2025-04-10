@@ -86,6 +86,18 @@ class FlavorConfiguration( metaclass = __.ImmutableCompleteDataclass ):
     ] = None
 
 
+Flavor: __.typx.TypeAlias = int | str
+FlavorsRegistry: __.typx.TypeAlias = (
+    __.ImmutableDictionary[ Flavor, FlavorConfiguration ] )
+FlavorsRegistryLiberal: __.typx.TypeAlias = (
+    __.cabc.Mapping[ Flavor, FlavorConfiguration ] )
+Formatter: __.typx.TypeAlias = __.typx.Callable[ [ __.typx.Any ], str ]
+FormatterFactory: __.typx.TypeAlias = (
+    __.typx.Callable[ [ FormatterControl, str, Flavor ], Formatter ] )
+PrefixEmitter: __.typx.TypeAlias = __.typx.Callable[ [ str, Flavor ], str ]
+PrefixEmitterUnion: __.typx.TypeAlias = str | PrefixEmitter
+
+
 class ModuleConfiguration( metaclass = __.ImmutableCompleteDataclass ):
     ''' Per-module or per-package configuration. '''
 
@@ -93,7 +105,7 @@ class ModuleConfiguration( metaclass = __.ImmutableCompleteDataclass ):
         FlavorsRegistry,
         __.typx.Doc(
             ''' Registry of flavor identifiers to configurations. ''' ),
-    ] = __.dcls.field( default_factory = __.ImmutableDictionary ) # pyright: ignore
+    ] = __.dcls.field( default_factory = FlavorsRegistry )
     formatter_factory: __.typx.Annotated[
         __.typx.Optional[ FormatterFactory ],
         __.typx.Doc(
@@ -155,15 +167,3 @@ class VehicleConfiguration( metaclass = __.ImmutableCompleteDataclass ):
                 arguments. Returns prefix string.
             ''' ),
     ] = _icecream.DEFAULT_PREFIX
-
-
-Flavor: __.typx.TypeAlias = int | str
-FlavorsRegistry: __.typx.TypeAlias = (
-    __.ImmutableDictionary[ Flavor, FlavorConfiguration ] )
-FlavorsRegistryLiberal: __.typx.TypeAlias = (
-    __.cabc.Mapping[ Flavor, FlavorConfiguration ] )
-Formatter: __.typx.TypeAlias = __.typx.Callable[ [ __.typx.Any ], str ]
-FormatterFactory: __.typx.TypeAlias = (
-    __.typx.Callable[ [ FormatterControl, str, Flavor ], Formatter ] )
-PrefixEmitter: __.typx.TypeAlias = __.typx.Callable[ [ str, Flavor ], str ]
-PrefixEmitterUnion: __.typx.TypeAlias = str | PrefixEmitter

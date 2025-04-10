@@ -69,6 +69,27 @@ class Omniflavor( __.enum.Enum ):
     Instance = __.enum.auto( )
 
 
+ActiveFlavors: __.typx.TypeAlias = Omniflavor | frozenset[ _cfg.Flavor ]
+ActiveFlavorsLiberal: __.typx.TypeAlias = __.typx.Union[
+    Omniflavor,
+    __.cabc.Sequence[ _cfg.Flavor ],
+    __.cabc.Set[ _cfg.Flavor ],
+]
+ActiveFlavorsRegistry: __.typx.TypeAlias = (
+    __.ImmutableDictionary[ str | None, ActiveFlavors ] )
+ActiveFlavorsRegistryLiberal: __.typx.TypeAlias = (
+    __.cabc.Mapping[ str | None, ActiveFlavorsLiberal ] )
+ModulesConfigurationsRegistryLiberal: __.typx.TypeAlias = (
+    __.cabc.Mapping[ str, _cfg.ModuleConfiguration ] )
+ReportersRegistry: __.typx.TypeAlias = (
+    __.AccretiveDictionary[
+        tuple[ str, _cfg.Flavor ], _icecream.IceCreamDebugger ] )
+TraceLevelsRegistry: __.typx.TypeAlias = (
+    __.ImmutableDictionary[ str | None, int ] )
+TraceLevelsRegistryLiberal: __.typx.TypeAlias = (
+    __.cabc.Mapping[ str | None, int ] )
+
+
 builtins_alias_default: __.typx.Annotated[
     str,
     __.typx.Doc( ''' Default alias for global truck in builtins module. ''' ),
@@ -93,7 +114,7 @@ class Truck( metaclass = __.ImmutableCompleteDataclass ):
                 Key ``None`` applies globally. Module-specific entries
                 override globals for that module.
             ''' ),
-    ] = __.dcls.field( default_factory = __.ImmutableDictionary ) # pyright: ignore
+    ] = __.dcls.field( default_factory = ActiveFlavorsRegistry )
     generalcfg: __.typx.Annotated[
         _cfg.VehicleConfiguration,
         __.typx.Doc(
@@ -135,11 +156,10 @@ class Truck( metaclass = __.ImmutableCompleteDataclass ):
     ] = __.dcls.field(
         default_factory = lambda: __.ImmutableDictionary( { None: -1 } ) )
     _debuggers: __.typx.Annotated[
-        __.AccretiveDictionary[
-            tuple[ str, _cfg.Flavor ], _icecream.IceCreamDebugger ],
+        ReportersRegistry,
         __.typx.Doc(
             ''' Cache of debugger instances by module and flavor. ''' ),
-    ] = __.dcls.field( default_factory = __.AccretiveDictionary ) # pyright: ignore
+    ] = __.dcls.field( default_factory = ReportersRegistry )
     _debuggers_lock: __.typx.Annotated[
         __.threads.Lock,
         __.typx.Doc( ''' Access lock for cache of debugger instances. ''' ),
@@ -218,24 +238,6 @@ class Truck( metaclass = __.ImmutableCompleteDataclass ):
         with _registrar_lock:
             self.modulecfgs[ name ] = configuration
         return self
-
-
-ActiveFlavors: __.typx.TypeAlias = Omniflavor | frozenset[ _cfg.Flavor ]
-ActiveFlavorsLiberal: __.typx.TypeAlias = __.typx.Union[
-    Omniflavor,
-    __.cabc.Sequence[ _cfg.Flavor ],
-    __.cabc.Set[ _cfg.Flavor ],
-]
-ActiveFlavorsRegistry: __.typx.TypeAlias = (
-    __.ImmutableDictionary[ str | None, ActiveFlavors ] )
-ActiveFlavorsRegistryLiberal: __.typx.TypeAlias = (
-    __.cabc.Mapping[ str | None, ActiveFlavorsLiberal ] )
-ModulesConfigurationsRegistryLiberal: __.typx.TypeAlias = (
-    __.cabc.Mapping[ str, _cfg.ModuleConfiguration ] )
-TraceLevelsRegistry: __.typx.TypeAlias = (
-    __.ImmutableDictionary[ str | None, int ] )
-TraceLevelsRegistryLiberal: __.typx.TypeAlias = (
-    __.cabc.Mapping[ str | None, int ] )
 
 InstallAliasArgument: __.typx.TypeAlias = __.typx.Annotated[
     str,
