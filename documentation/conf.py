@@ -84,8 +84,11 @@ nitpick_ignore = [
     ( 'py:class', "accretive.dictionaries.Annotated" ),
     ( 'py:class', "accretive.dictionaries.Dictionary" ),
     ( 'py:class', "collections.abc.Annotated" ),
+    ( 'py:class', "frigid.classes.Class" ),
+    ( 'py:class', "frigid.classes.CompleteDataclass" ),
     ( 'py:class', "frigid.dictionaries.Annotated" ),
     ( 'py:class', "frigid.dictionaries.Dictionary" ),
+    ( 'py:class', "icecream.icecream.IceCreamDebugger" ),
     ( 'py:class', "ictruck.configuration.Annotated" ),
     ( 'py:class', "ictruck.recipes.rich.Annotated" ),
     ( 'py:class', "ictruck.recipes.sundae.Annotated" ),
@@ -95,6 +98,7 @@ nitpick_ignore = [
     ( 'py:class', "types.Annotated" ),
     ( 'py:class', "typing_extensions.Any" ),
     ( 'py:class', "typing_extensions.Self" ),
+    ( 'py:class', "typing_extensions.TypeIs" ),
     ( 'py:func', "__.register_module" ),
 ]
 

@@ -1,5 +1,5 @@
-.. vim: set fileencoding=utf-8:
-.. -*- coding: utf-8 -*-
+.. vim: set filetype=rst fileencoding=utf-8:
+.. -*- mode: rst ; coding: utf-8 -*-
 .. +--------------------------------------------------------------------------+
    |                                                                          |
    | Licensed under the Apache License, Version 2.0 (the "License");          |
@@ -29,19 +29,20 @@ Package ``ictruck.__``
 ===============================================================================
 
 
-Module ``ictruck.imports``
+Module ``ictruck.__.imports``
 -------------------------------------------------------------------------------
 
-.. .. automodule:: ictruck.__.imports
+.. automodule:: ictruck.__.imports
+   :exclude-members: immutable
 
 
-Module ``ictruck.miscellany``
+Module ``ictruck.__.miscellany``
 -------------------------------------------------------------------------------
 
 .. automodule:: ictruck.__.miscellany
 
 
-Module ``ictruck.validators``
+Module ``ictruck.__.validators``
 -------------------------------------------------------------------------------
 
 .. automodule:: ictruck.__.validators
