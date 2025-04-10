@@ -40,7 +40,7 @@ class FakeConsole:
         import os
         blackhole = open( # noqa: SIM115
             os.devnull, 'w', encoding = locale.getpreferredencoding( ) )
-        self.console = Console( file = blackhole  )
+        self.console = Console( file = blackhole )
         self.print_calls = [ ]
 
     def print( self, text, end = '\n', highlight = None, style = None ):
@@ -56,15 +56,9 @@ class FakeConsole:
 
 
 def _strip_ansi_c1( text ):
-    # Needed to work around https://github.com/Textualize/rich/issues/3693.
+    # Null device is TTY on Windows. :facepalm:
     regex = re.compile( r'''\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])''' )
     return regex.sub( '', text )
-
-
-@pytest.fixture( scope = 'session' )
-def printers( ):
-    ''' Provides printers module. '''
-    return cache_import_module( f"{PACKAGE_NAME}.printers" )
 
 
 @pytest.fixture
@@ -94,26 +88,27 @@ def fake_auxiliaries( recipes ):
 
 
 @pytest.fixture( scope = 'session' )
-def base():
-    ''' Provides base utilities module. '''
+def base( ):
     return cache_import_module( f"{PACKAGE_NAME}.__" )
 
 
 @pytest.fixture( scope = 'session' )
-def configuration():
-    ''' Provides configuration module. '''
+def configuration( ):
     return cache_import_module( f"{PACKAGE_NAME}.configuration" )
 
 
 @pytest.fixture( scope = 'session' )
-def recipes():
-    ''' Provides sundae recipes module. '''
+def printers( ):
+    return cache_import_module( f"{PACKAGE_NAME}.printers" )
+
+
+@pytest.fixture( scope = 'session' )
+def recipes( ):
     return cache_import_module( f"{PACKAGE_NAME}.recipes.sundae" )
 
 
 @pytest.fixture( scope = 'session' )
 def vehicles():
-    ''' Provides vehicles module. '''
     return cache_import_module( f"{PACKAGE_NAME}.vehicles" )
 
 
