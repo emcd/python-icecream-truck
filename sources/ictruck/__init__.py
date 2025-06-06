@@ -43,7 +43,7 @@ from .printers import *
 from .vehicles import *
 
 
-__version__ = '1.3a0'
+__version__ = '1.3rc0'
 
 
 # TODO: Also reclassify package modules as concealed.
