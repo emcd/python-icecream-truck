@@ -15,10 +15,10 @@ license = 'Apache-2.0'
 readme = { 'file' = 'README.rst', 'content-type' = 'text/x-rst' }
 requires-python = '>= 3.10'
 dependencies = [
-  'absence',
-  'accretive',
+  'absence~=1.1',
+  'accretive~=3.0',
   'colorama',
-  'frigid',
+  'frigid~=3.0',
   'icecream',
   'typing-extensions',
   # --- BEGIN: Injected by Copier ---
@@ -55,6 +55,12 @@ rich = [ 'rich' ]
 year-of-origin = 2025
 
 # https://coverage.readthedocs.io/en/latest/config.html
+[tool.coverage.paths]
+gha-runners = [
+  '/home/runner/work/python-icecream-truck/python-icecream-truck/',
+  '/Users/runner/work/python-icecream-truck/python-icecream-truck/',
+  'D:\a\python-icecream-truck\python-icecream-truck\',
+]
 [tool.coverage.run]
 branch = true
 command_line = '-m pytest' # TODO? '--fail-under'
@@ -94,6 +100,7 @@ description = ''' Development environment. '''
 dependencies = [
   'Jinja2',
   'coverage[toml]',
+  'emcd-projects',
   'furo',
   'icecream-truck[rich]',
   'packaging',
@@ -103,7 +110,6 @@ dependencies = [
   'pytest',
   'pytest-mock',
   'ruff',
-  'semgrep;platform_system!="Windows"', # https://github.com/returntocorp/semgrep/issues/1330
   'sphinx',
   'sphinx-copybutton',
   'sphinx-inline-tabs',
@@ -123,31 +129,31 @@ HYPOTHESIS_STORAGE_DIRECTORY = '.auxiliary/caches/hypothesis'
 # --- END: Injected by Copier ---
 [tool.hatch.envs.develop.scripts]
 docsgen = [
-  '''sphinx-build -E -b doctest -d .auxiliary/caches/sphinx \
-     documentation .auxiliary/artifacts/sphinx-doctest''',
-  '''sphinx-build -E -b linkcheck -d .auxiliary/caches/sphinx \
-     documentation .auxiliary/artifacts/sphinx-linkcheck''',
-  '''sphinx-build -a -d .auxiliary/caches/sphinx \
-     documentation .auxiliary/artifacts/sphinx-html''',
+  """sphinx-build -E -b linkcheck -d .auxiliary/caches/sphinx \
+     documentation .auxiliary/artifacts/sphinx-linkcheck""",
+  """sphinx-build -a -d .auxiliary/caches/sphinx \
+     documentation .auxiliary/artifacts/sphinx-html""",
 ]
 linters = [
-  '''ruff check --quiet sources documentation tests examples''',
+  """ruff check --quiet sources documentation tests examples""",
   # --- BEGIN: Injected by Copier ---
   # --- END: Injected by Copier ---
-  '''pyright sources''',
-  '''semgrep --config p/python --error --quiet --skip-unknown-extensions \
-     sources/ictruck''',
-  # --- BEGIN: Injected by Copier ---
-  # --- END: Injected by Copier ---
+  """pyright sources""",
 ]
 packagers = [
-  '''hatch build''',
+  """hatch build""",
   # --- BEGIN: Injected by Copier ---
   # --- END: Injected by Copier ---
 ]
-testers = [
+testers-no-reports = [
   'coverage erase',
   'coverage run',
+  """coverage run -m sphinx.cmd.build \
+     -E -b doctest -d .auxiliary/caches/sphinx \
+     documentation .auxiliary/artifacts/sphinx-doctest""",
+]
+testers = [
+  'testers-no-reports',
   'coverage combine',
   'coverage report --skip-covered',
   'coverage html',
@@ -186,7 +192,7 @@ strict = false
 
 # https://microsoft.github.io/pyright/#/configuration
 [tool.pyright]
-ignore = [ 'tests' ]
+ignore = [ 'documentation', 'tests' ] # Stronger hint for language server.
 include = [ 'sources' ]
 reportConstantRedefinition = true
 reportInvalidTypeVarUse = true
@@ -226,7 +232,7 @@ python_functions = [ 'test_[0-9][0-9][0-9]_*' ]
 cache_dir = '.auxiliary/caches/pytest'
 
 [tool.ruff]
-builtins = [ 'ic' ]
+#builtins = [ 'ic' ]
 cache-dir = '.auxiliary/caches/ruff'
 indent-width = 4
 line-length = 79
@@ -298,22 +304,22 @@ filename = 'documentation/changelog.rst'
 package = 'ictruck'
 package_dir = 'sources'
 [[tool.towncrier.type]]
-directory = 'bugfix'
-name = 'Bugfixes'
+# features and other improvements
+directory = 'enhance'
+name = 'Enhancements'
 showcontent = true
 [[tool.towncrier.type]]
-directory = 'docs'
-name = 'Documentation Improvements'
+# deprecations and other notices
+directory = 'notify'
+name = 'Notices'
 showcontent = true
 [[tool.towncrier.type]]
-directory = 'feature'
-name = 'Features'
+# removals of feature or platform support
+directory = 'remove'
+name = 'Removals'
 showcontent = true
 [[tool.towncrier.type]]
-directory = 'platform'
-name = 'Supported Platforms'
-showcontent = true
-[[tool.towncrier.type]]
-directory = 'removal'
-name = 'Deprecations and Removals'
+# bug fixes
+directory = 'repair'
+name = 'Repairs'
 showcontent = true

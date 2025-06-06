@@ -42,6 +42,10 @@ _validate_arguments = (
         errorclass = __.exceptions.ArgumentClassInvalidity ) )
 
 
+InterpolantsStylesRegistry: __.typx.TypeAlias = (
+    __.AccretiveDictionary[ str, _Style ] )
+
+
 class Auxiliaries( metaclass = __.ImmutableCompleteDataclass ):
     ''' Auxiliary functions used by formatters and interpolation.
 
@@ -114,10 +118,10 @@ class PrefixFormatControl( metaclass = __.ImmutableCompleteDataclass ):
             ''' )
     ] = PrefixLabelPresentations.Words
     styles: __.typx.Annotated[
-        __.AccretiveDictionary[ str, _Style ],
+        InterpolantsStylesRegistry,
         __.typx.Doc(
             ''' Mapping of interpolant names to ``rich`` style objects. ''' ),
-    ] = __.dcls.field( default_factory = __.AccretiveDictionary ) # pyright: ignore
+    ] = __.dcls.field( default_factory = InterpolantsStylesRegistry )
     template: __.typx.Annotated[
         str,
         __.typx.Doc(

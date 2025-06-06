@@ -26,8 +26,7 @@
 
 import types
 
-
-from types import MappingProxyType as DictionaryProxy
+from pathlib import Path
 
 
 PACKAGE_NAME = 'ictruck'
@@ -47,7 +46,6 @@ def cache_import_module( qname: str ) -> types.ModuleType:
 
 
 def _discover_module_names( package_name: str ) -> tuple[ str, ... ]:
-    from pathlib import Path
     package = cache_import_module( package_name )
     if not package.__file__: return ( )
     return tuple(
@@ -57,13 +55,13 @@ def _discover_module_names( package_name: str ) -> tuple[ str, ... ]:
             and path.is_file( ) )
 
 
-MODULES_NAMES_BY_PACKAGE_NAME = DictionaryProxy( {
+MODULES_NAMES_BY_PACKAGE_NAME = types.MappingProxyType( {
     name: _discover_module_names( name ) for name in PACKAGES_NAMES } )
-PACKAGES_NAMES_BY_MODULE_QNAME = DictionaryProxy( {
+PACKAGES_NAMES_BY_MODULE_QNAME = types.MappingProxyType( {
     f"{subpackage_name}.{module_name}": subpackage_name
     for subpackage_name in PACKAGES_NAMES
     for module_name in MODULES_NAMES_BY_PACKAGE_NAME[ subpackage_name ] } )
 MODULES_QNAMES = tuple( PACKAGES_NAMES_BY_MODULE_QNAME.keys( ) )
-MODULES_NAMES_BY_MODULE_QNAME = DictionaryProxy( {
+MODULES_NAMES_BY_MODULE_QNAME = types.MappingProxyType( {
     name: name.rsplit( '.', maxsplit = 1 )[ -1 ]
     for name in PACKAGES_NAMES_BY_MODULE_QNAME } )
