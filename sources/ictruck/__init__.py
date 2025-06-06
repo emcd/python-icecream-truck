@@ -18,7 +18,17 @@
 #============================================================================#
 
 
-''' Flexible factory for Icecream debuggers. '''
+''' Flexible factory for Icecream debuggers.
+
+    A debugging library that enhances the `icecream
+    <https://github.com/gruns/icecream>`_ package with flexible, flavorful
+    traces and module-specific configurations. Designed for both application
+    and library developers, it provides granular control over debug output
+    while ensuring isolation between different configurations.
+
+    The package organizes its functionality across several modules, providing
+    exceptions, configuration hierarchies, and specialized output recipes.
+'''
 
 
 from . import __

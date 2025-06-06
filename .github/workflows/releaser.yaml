@@ -24,7 +24,7 @@ jobs:
 
   test:
     needs: [initialize]
-    uses: emcd/python-project-common/.github/workflows/xrepo--tester.yaml@v1.16
+    uses: emcd/python-project-common/.github/workflows/xrepo--tester.yaml@gha-1
     with:
       matrix-exclusions: '${{ needs.initialize.outputs.matrix-exclusions }}'
       platforms: '${{ needs.initialize.outputs.platforms }}'
@@ -33,7 +33,7 @@ jobs:
 
   report:
     needs: [initialize, test]
-    uses: emcd/python-project-common/.github/workflows/xrepo--reporter.yaml@v1.16
+    uses: emcd/python-project-common/.github/workflows/xrepo--reporter.yaml@gha-1
     with:
       python-version: '${{ fromJSON(needs.initialize.outputs.python-versions)[0] }}'
 
@@ -43,14 +43,14 @@ jobs:
       contents: write
       id-token: write
       pages: write
-    uses: emcd/python-project-common/.github/workflows/xrepo--documenter.yaml@v1.16
+    uses: emcd/python-project-common/.github/workflows/xrepo--documenter.yaml@gha-1
     with:
       include-reports: true
       python-version: '${{ fromJSON(needs.initialize.outputs.python-versions)[0] }}'
 
   package:
     needs: [initialize, docsgen]
-    uses: emcd/python-project-common/.github/workflows/xrepo--packager.yaml@v1.16
+    uses: emcd/python-project-common/.github/workflows/xrepo--packager.yaml@gha-1
     with:
       artifacts-path: '.auxiliary/artifacts/hatch-build' # TODO: Use environment.
       python-version: '${{ fromJSON(needs.initialize.outputs.python-versions)[0] }}'
@@ -81,7 +81,6 @@ jobs:
           skip-existing: ${{ inputs.which-pypi == 'testpypi' }}
 
   publish-github:
-    if: ${{ startsWith(github.ref, 'refs/tags/') }}
     needs:
       - initialize
       - package
@@ -90,12 +89,13 @@ jobs:
       # --- END: Injected by Copier ---
     runs-on: ubuntu-latest
     permissions:
+      attestations: write
       contents: write
       id-token: write
     steps:
 
       - name: Prepare Python
-        uses: emcd/python-project-common/.github/actions/python-hatch@v1.16
+        uses: emcd/python-project-common/.github/actions/python-hatch@gha-1
         with:
           python-version: ${{ fromJSON(needs.initialize.outputs.python-versions)[0] }}
 
@@ -111,10 +111,10 @@ jobs:
           cd ${{ env.DISTRIBUTIONS_PATH }}
           sha256sum icecream_truck-* >SHA256SUMS.txt
 
-      - name: Sign Distributions
-        uses: sigstore/gh-action-sigstore-python@v3.0.0
+      - name: Attest Build Provenance
+        uses: actions/attest-build-provenance@v2
         with:
-          inputs: >-
+          subject-path: |
             ${{ env.DISTRIBUTIONS_PATH }}/SHA256SUMS.txt
             ${{ env.DISTRIBUTIONS_PATH }}/icecream_truck-*
 
@@ -127,6 +127,7 @@ jobs:
           cp .auxiliary/artifacts/tc-release-notes.rst .auxiliary/artifacts/release-notes.rst
 
       - name: Create Release
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
@@ -135,6 +136,7 @@ jobs:
             --notes-file .auxiliary/artifacts/release-notes.rst
 
       - name: Publish Artifacts
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |

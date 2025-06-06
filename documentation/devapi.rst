@@ -28,12 +28,19 @@ Internal Development Interface
 Package ``ictruck.__``
 ===============================================================================
 
+.. automodule:: ictruck.__
+
 
 Module ``ictruck.__.imports``
 -------------------------------------------------------------------------------
 
 .. automodule:: ictruck.__.imports
-   :exclude-members: immutable
+
+
+Module ``ictruck.__.nomina``
+-------------------------------------------------------------------------------
+
+.. automodule:: ictruck.__.nomina
 
 
 Module ``ictruck.__.miscellany``

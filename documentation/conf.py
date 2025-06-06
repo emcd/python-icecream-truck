@@ -1,3 +1,6 @@
+# vim: set filetype=python fileencoding=utf-8:
+# -*- mode: python ; coding: utf-8 -*-
+
 ''' Configuration file for the Sphinx documentation builder.
 
     This file only contains a selection of the most common options.
@@ -114,8 +117,8 @@ linkcheck_ignore = [
     r'https://github\.com/emcd/python-icecream-truck/.*',
     # Package does not exist during initial development.
     r'https://pypi.org/project/ictruck/',
-    # Badge redirects are now blocked for our user agent apparently.
-    r'https://img\.shields\.io/endpoint\?url=.*',
+    # Github aggressively rate-limits access to certain blobs.
+    r'https://github\.com/.*/.*/blob/.*',
 ]
 
 # -- Options for HTML output -------------------------------------------------
@@ -135,13 +138,13 @@ html_static_path = [ '_static' ]
 
 autodoc_default_options = {
     'member-order': 'groupwise',
-    'imported-members': False,
-    'inherited-members': True,
+    'members': True,
     'show-inheritance': True,
-    'undoc-members': True,
+    # 'special-members': '__call__',
 }
 
-#autodoc_typehints = 'description'
+autodoc_typehints = 'none'
+autodoc_use_type_comments = False
 
 # -- Options for intersphinx extension ---------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/extensions/intersphinx.html#configuration

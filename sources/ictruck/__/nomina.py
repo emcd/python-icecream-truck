@@ -18,39 +18,38 @@
 #============================================================================#
 
 
-''' Common imports used throughout the package. '''
-
-# ruff: noqa: F401
+''' Common names and type aliases. '''
 
 
-import collections.abc as   cabc
-import contextlib as        ctxl
-import dataclasses as       dcls
-import                      enum
-import functools as         funct
-import                      inspect
-import                      io
-import itertools as         itert
-import                      locale
-import                      os
-import                      re
-import                      sys
-import threading as         threads
-import                      time
-import                      types
-import                      warnings
+from . import imports as __
 
-import                      dynadoc
-import typing_extensions as typx
-# --- BEGIN: Injected by Copier ---
-# --- END: Injected by Copier ---
 
-from absence import Absential, absent, is_absent
-from accretive.qaliases import AccretiveDictionary
-from frigid.qaliases import (
-    ImmutableClass,
-    ImmutableCompleteDataclass,
-    ImmutableDictionary,
-    immutable,
-    reclassify_modules_as_immutable,
-)
+H = __.typx.TypeVar( 'H', bound = __.cabc.Hashable ) # Hash Key
+V = __.typx.TypeVar( 'V' ) # Value
+
+
+ComparisonResult: __.typx.TypeAlias = bool | __.types.NotImplementedType
+NominativeArguments: __.typx.TypeAlias = __.cabc.Mapping[ str, __.typx.Any ]
+PositionalArguments: __.typx.TypeAlias = __.cabc.Sequence[ __.typx.Any ]
+
+
+DictionaryNominativeArgument: __.typx.TypeAlias = __.typx.Annotated[
+    V,
+    __.dynadoc.Doc(
+        'Zero or more keyword arguments from which to initialize '
+        'dictionary data.' ),
+]
+DictionaryPositionalArgument: __.typx.TypeAlias = __.typx.Annotated[
+    __.cabc.Mapping[ H, V ] | __.cabc.Iterable[ tuple[ H, V ] ],
+    __.dynadoc.Doc(
+        'Zero or more iterables from which to initialize dictionary data. '
+        'Each iterable must be dictionary or sequence of key-value pairs. '
+        'Duplicate keys will result in an error.' ),
+]
+ExceptionInfo: __.typx.TypeAlias = tuple[
+    type[ BaseException ] | None,
+    BaseException | None,
+    __.types.TracebackType | None ]
+
+
+package_name = __name__.split( '.', maxsplit = 1 )[ 0 ]
