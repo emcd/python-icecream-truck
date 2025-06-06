@@ -23,6 +23,16 @@ Release Notes
 
 .. towncrier release notes start
 
+Ictruck 1.3 (2025-06-05)
+========================
+
+Enhancements
+------------
+
+- Internals update - nothing to see here. Lock versions of some dependencies in
+  anticipation of breaking changes.
+
+
 Ictruck 1.2 (2025-04-06)
 ========================
 
