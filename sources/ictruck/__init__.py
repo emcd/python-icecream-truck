@@ -43,8 +43,8 @@ from .printers import *
 from .vehicles import *
 
 
+__version__: str
 __version__ = '1.4a0'
 
 
-# TODO: Also reclassify package modules as concealed.
-__.reclassify_modules_as_immutable( __name__ )
+__.immut.reclassify_modules( __name__, recursive = True )

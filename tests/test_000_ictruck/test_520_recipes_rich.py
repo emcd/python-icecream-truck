@@ -136,7 +136,7 @@ def test_103_produce_truck_active_flavors(
 ):
     ''' Truck factory respects active flavors in Formatter mode. '''
     monkeypatch.setattr( sys, 'stderr', simple_output )
-    flavors = base.AccretiveDictionary(
+    flavors = base.accret.Dictionary(
         info = configuration.FlavorConfiguration( ),
         error = configuration.FlavorConfiguration( ),
         debug = configuration.FlavorConfiguration( ) )

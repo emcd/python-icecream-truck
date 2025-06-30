@@ -35,13 +35,13 @@ PositionalArguments: __.typx.TypeAlias = __.cabc.Sequence[ __.typx.Any ]
 
 DictionaryNominativeArgument: __.typx.TypeAlias = __.typx.Annotated[
     V,
-    __.dynadoc.Doc(
+    __.ddoc.Doc(
         'Zero or more keyword arguments from which to initialize '
         'dictionary data.' ),
 ]
 DictionaryPositionalArgument: __.typx.TypeAlias = __.typx.Annotated[
     __.cabc.Mapping[ H, V ] | __.cabc.Iterable[ tuple[ H, V ] ],
-    __.dynadoc.Doc(
+    __.ddoc.Doc(
         'Zero or more iterables from which to initialize dictionary data. '
         'Each iterable must be dictionary or sequence of key-value pairs. '
         'Duplicate keys will result in an error.' ),

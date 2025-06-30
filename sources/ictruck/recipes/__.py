@@ -20,7 +20,7 @@
 
 ''' Common imports used by recipes. '''
 
-# ruff: noqa: F401,F403,F405
+# ruff: noqa: F401,F403
 
 
 from __future__ import annotations

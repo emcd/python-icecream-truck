@@ -43,10 +43,10 @@ _validate_arguments = (
 
 
 InterpolantsStylesRegistry: __.typx.TypeAlias = (
-    __.AccretiveDictionary[ str, _Style ] )
+    __.accret.Dictionary[ str, _Style ] )
 
 
-class Auxiliaries( metaclass = __.ImmutableCompleteDataclass ):
+class Auxiliaries( __.immut.DataclassObject ):
     ''' Auxiliary functions used by formatters and interpolation.
 
         Typically used by unit tests to inject mock dependencies,
@@ -72,7 +72,7 @@ class Auxiliaries( metaclass = __.ImmutableCompleteDataclass ):
 
 
 
-class FlavorSpecification( metaclass = __.ImmutableCompleteDataclass ):
+class FlavorSpecification( __.immut.DataclassObject ):
     ''' Specification for custom flavor. '''
 
     color: __.typx.Annotated[
@@ -100,7 +100,7 @@ class PrefixLabelPresentations( __.enum.IntFlag ):
     Emoji =     __.enum.auto( )
 
 
-class PrefixFormatControl( metaclass = __.ImmutableCompleteDataclass ):
+class PrefixFormatControl( __.immut.DataclassObject ):
     ''' Format control for prefix emission. '''
 
     colorize: __.typx.Annotated[
@@ -178,9 +178,9 @@ ProduceModulecfgPrefixTsFormatArgument: __.typx.TypeAlias = __.typx.Annotated[
 ]
 
 
-_flavor_specifications: __.ImmutableDictionary[
+_flavor_specifications: __.immut.Dictionary[
     str, FlavorSpecification
-] = __.ImmutableDictionary(
+] = __.immut.Dictionary(
     note = FlavorSpecification(
         color = 'blue',
         emoji = '\N{Information Source}\ufe0f',
@@ -203,9 +203,9 @@ _flavor_specifications: __.ImmutableDictionary[
         color = 'green', emoji = '✅', label = 'SUCCESS' ),
 )
 
-_flavor_aliases: __.ImmutableDictionary[
+_flavor_aliases: __.immut.Dictionary[
     str, str
-] = __.ImmutableDictionary( {
+] = __.immut.Dictionary( {
     'n': 'note', 'm': 'monition',
     'e': 'error', 'a': 'abort',
     'ex': 'errorx', 'ax': 'abortx',
@@ -302,7 +302,7 @@ def _produce_flavors(
         flavors[ alias ] = flavors[ name ]
     for level in range( 10 ):
         flavors[ level ] = __.FlavorConfiguration( prefix_emitter = emitter )
-    return __.ImmutableDictionary( flavors )
+    return __.immut.Dictionary( flavors )
 
 
 def _produce_formatter_factory(

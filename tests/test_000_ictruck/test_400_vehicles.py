@@ -24,11 +24,11 @@
 import functools as funct
 import warnings
 
+import accretive as accret
+import frigid as immut
 import hypothesis
 import pytest
 
-from accretive.qaliases import AccretiveDictionary
-from frigid.qaliases import ImmutableDictionary
 from hypothesis import strategies as st
 
 from . import PACKAGE_NAME, cache_import_module
@@ -332,7 +332,7 @@ def test_502_install_with_trace_levels( vehicles, clean_builtins ):
     assert truck1.trace_levels[ None ] == 2
     levels = { None: 1, 'test': 3, }
     truck2 = vehicles.install( alias = 'ictr2', trace_levels = levels )
-    assert truck2.trace_levels == ImmutableDictionary( levels )
+    assert truck2.trace_levels == immut.Dictionary( levels )
 
 
 def test_503_install_with_active_flavors( vehicles, clean_builtins ):
@@ -341,7 +341,7 @@ def test_503_install_with_active_flavors( vehicles, clean_builtins ):
     assert truck1.active_flavors[ None ] == { 'debug', 1, }
     flavors = { None: { 'x', }, 'test': { 'y', }, }
     truck2 = vehicles.install( alias = 'ictr2', active_flavors = flavors )
-    expected = ImmutableDictionary( {
+    expected = immut.Dictionary( {
         k: set( v ) for k, v in flavors.items( ) } )
     assert truck2.active_flavors == expected
 
@@ -403,10 +403,10 @@ def test_510_install_with_default_env_vars(
     monkeypatch.setenv( 'ICTRUCK_ACTIVE_FLAVORS', 'x.y:note,abort+z:success' )
     monkeypatch.setenv( 'ICTRUCK_TRACE_LEVELS', '2+x.y:5' )
     truck = vehicles.install( printer_factory = simple_output )
-    assert truck.active_flavors == ImmutableDictionary( {
+    assert truck.active_flavors == immut.Dictionary( {
         'x.y': frozenset( { 'note', 'abort' } ),
         'z': frozenset( { 'success' } ) } )
-    assert truck.trace_levels == ImmutableDictionary( { None: 2, 'x.y': 5 } )
+    assert truck.trace_levels == immut.Dictionary( { None: 2, 'x.y': 5 } )
 
 
 def test_511_install_with_custom_env_vars(
@@ -420,8 +420,8 @@ def test_511_install_with_custom_env_vars(
         evname_trace_levels = 'CUSTOM_LEVELS',
         printer_factory = simple_output )
     assert truck.active_flavors == (
-        ImmutableDictionary( { 'test': frozenset( { 'errorx' } ) } ) )
-    assert truck.trace_levels == ImmutableDictionary( { None: 3 } )
+        immut.Dictionary( { 'test': frozenset( { 'errorx' } ) } ) )
+    assert truck.trace_levels == immut.Dictionary( { None: 3 } )
 
 
 def test_512_install_with_env_vars_disabled(
@@ -434,8 +434,8 @@ def test_512_install_with_env_vars_disabled(
         evname_active_flavors = None,
         evname_trace_levels = None,
         printer_factory = simple_output )
-    assert truck.active_flavors == ImmutableDictionary( { } )
-    assert truck.trace_levels == ImmutableDictionary( { None: -1 } )
+    assert truck.active_flavors == immut.Dictionary( { } )
+    assert truck.trace_levels == immut.Dictionary( { None: -1 } )
 
 
 def test_513_install_with_direct_args_overrides_env(
@@ -449,8 +449,8 @@ def test_513_install_with_direct_args_overrides_env(
         trace_levels = { 'z': 1 },
         printer_factory = simple_output )
     assert truck.active_flavors == (
-        ImmutableDictionary( { 'z': frozenset( { 'success' } ) } ) )
-    assert truck.trace_levels == ImmutableDictionary( { None: -1, 'z': 1 } )
+        immut.Dictionary( { 'z': frozenset( { 'success' } ) } ) )
+    assert truck.trace_levels == immut.Dictionary( { None: -1, 'z': 1 } )
 
 
 def test_514_produce_truck_with_env_vars(
@@ -461,8 +461,8 @@ def test_514_produce_truck_with_env_vars(
     monkeypatch.setenv( 'ICTRUCK_TRACE_LEVELS', '0' )
     truck = vehicles.produce_truck( printer_factory = simple_output )
     assert truck.active_flavors == (
-        ImmutableDictionary( { 'global': frozenset( { 'debug' } ) } ) )
-    assert truck.trace_levels == ImmutableDictionary( { None: 0 } )
+        immut.Dictionary( { 'global': frozenset( { 'debug' } ) } ) )
+    assert truck.trace_levels == immut.Dictionary( { None: 0 } )
 
 
 def test_515_install_global_scope_active_flavors_ev(
@@ -472,7 +472,7 @@ def test_515_install_global_scope_active_flavors_ev(
     monkeypatch.setenv( 'ICTRUCK_ACTIVE_FLAVORS', 'foo,bar' )
     truck = vehicles.install( printer_factory = simple_output )
     assert truck.active_flavors == (
-        ImmutableDictionary( { None: frozenset( { 'foo', 'bar' } ) } ) )
+        immut.Dictionary( { None: frozenset( { 'foo', 'bar' } ) } ) )
 
 
 def test_516_install_wildcard_active_flavors_ev(
@@ -482,7 +482,7 @@ def test_516_install_wildcard_active_flavors_ev(
     monkeypatch.setenv( 'ICTRUCK_ACTIVE_FLAVORS', f"{__name__}:*" )
     truck = vehicles.install( printer_factory = simple_output )
     assert truck.active_flavors == (
-        ImmutableDictionary( { __name__: vehicles.omniflavor } ) )
+        immut.Dictionary( { __name__: vehicles.omniflavor } ) )
 
 
 def test_517_install_with_invalid_trace_levels(
@@ -493,7 +493,7 @@ def test_517_install_with_invalid_trace_levels(
     with warnings.catch_warnings( record = True ) as records:
         truck = vehicles.install( printer_factory = simple_output )
     assert len( records ) == 2
-    assert truck.trace_levels == ImmutableDictionary( { None: -1, 'x.y': 5 } )
+    assert truck.trace_levels == immut.Dictionary( { None: -1, 'x.y': 5 } )
 
 
 def test_518_produce_truck_with_invalid_global_trace_level(
@@ -504,7 +504,7 @@ def test_518_produce_truck_with_invalid_global_trace_level(
     with warnings.catch_warnings( record = True ) as records:
         truck = vehicles.produce_truck( printer_factory = simple_output )
     assert len( records ) == 1
-    assert truck.trace_levels == ImmutableDictionary( { None: -1 } )
+    assert truck.trace_levels == immut.Dictionary( { None: -1 } )
 
 
 def test_600_register_module_basic(
@@ -514,7 +514,7 @@ def test_600_register_module_basic(
     printer_factory = funct.partial(
         printers.produce_simple_printer, simple_output )
     truck = vehicles.produce_truck(
-        modulecfgs = AccretiveDictionary( ),
+        modulecfgs = accret.Dictionary( ),
         printer_factory = printer_factory,
         trace_levels = 0,
     ).install( )
@@ -538,7 +538,7 @@ def test_601_register_module_on_truck(
     printer_factory = funct.partial(
         printers.produce_simple_printer, simple_output )
     truck = vehicles.produce_truck(
-        modulecfgs = AccretiveDictionary( ),
+        modulecfgs = accret.Dictionary( ),
         printer_factory = printer_factory,
         trace_levels = 0,
     ).install( )
@@ -556,7 +556,7 @@ def test_602_register_module_full_config_global(
     printer_factory = funct.partial(
         printers.produce_simple_printer, simple_output )
     truck = vehicles.produce_truck(
-        modulecfgs = AccretiveDictionary( ),
+        modulecfgs = accret.Dictionary( ),
         printer_factory = printer_factory,
         active_flavors = vehicles.omniflavor,
         trace_levels = 0,
@@ -596,7 +596,7 @@ def test_603_register_module_full_config_package(
     printer_factory = funct.partial(
         printers.produce_simple_printer, simple_output )
     truck = vehicles.produce_truck(
-        modulecfgs = AccretiveDictionary( ),
+        modulecfgs = accret.Dictionary( ),
         printer_factory = printer_factory,
         active_flavors = { __package__: vehicles.omniflavor },
         trace_levels = { __package__: 0 },
