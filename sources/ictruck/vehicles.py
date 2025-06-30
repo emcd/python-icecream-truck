@@ -31,8 +31,8 @@ from . import exceptions as _exceptions
 from . import printers as _printers
 
 
-if __.typx.TYPE_CHECKING: # pragma: no cover
-    import _typeshed
+# if __.typx.TYPE_CHECKING: # pragma: no cover
+#     import _typeshed
 
 
 _installer_lock: __.threads.Lock = __.threads.Lock( )
@@ -585,12 +585,11 @@ def _calculate_ic_initargs(
     return nomargs
 
 
-def _dict_from_dataclass(
-    obj: _typeshed.DataclassInstance
-) -> dict[ str, __.typx.Any ]:
+def _dict_from_dataclass( objct: object ) -> dict[ str, __.typx.Any ]:
+    # objct = __.typx.cast( _typeshed.DataclassInstance, objct )
     return {
-        field.name: getattr( obj, field.name )
-        for field in __.dcls.fields( obj )
+        field.name: getattr( objct, field.name )
+        for field in __.dcls.fields( objct ) # pyright: ignore[reportArgumentType]
         if not field.name.startswith( '_' ) }
 
 
@@ -616,9 +615,9 @@ def _iterate_module_name_ancestry( name: str ) -> __.cabc.Iterator[ str ]:
 
 
 def _merge_ic_configuration(
-    base: dict[ str, __.typx.Any ], update_obj: _typeshed.DataclassInstance
+    base: dict[ str, __.typx.Any ], update_objct: object,
 ) -> dict[ str, __.typx.Any ]:
-    update: dict[ str, __.typx.Any ] = _dict_from_dataclass( update_obj )
+    update: dict[ str, __.typx.Any ] = _dict_from_dataclass( update_objct )
     result: dict[ str, __.typx.Any ] = { }
     result[ 'flavors' ] = (
             dict( base.get( 'flavors', dict( ) ) )
