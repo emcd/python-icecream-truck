@@ -47,9 +47,9 @@ __version__: str
 __version__ = '1.4a0'
 
 
-# _dynadoc_introspection_control = (
-#     __.ddoc.IntrospectionControl(
-#         targets = __.ddoc.IntrospectionTargetsOmni ) )
-# __.ddoc.assign_module_docstring(
-#     __name__, introspection = _dynadoc_introspection_control )
+_dynadoc_introspection_control = (
+    __.ddoc.IntrospectionControl(
+        targets = __.ddoc.IntrospectionTargetsOmni ) )
+__.ddoc.assign_module_docstring(
+    __name__, introspection = _dynadoc_introspection_control )
 __.immut.reclassify_modules( __name__, recursive = True )
