@@ -43,8 +43,13 @@ from .printers import *
 from .vehicles import *
 
 
-__version__ = '1.3'
+__version__: str
+__version__ = '1.4'
 
 
-# TODO: Also reclassify package modules as concealed.
-__.reclassify_modules_as_immutable( __name__ )
+_dynadoc_introspection_control = (
+    __.ddoc.IntrospectionControl(
+        targets = __.ddoc.IntrospectionTargetsOmni ) )
+__.ddoc.assign_module_docstring(
+    __name__, introspection = _dynadoc_introspection_control )
+__.immut.reclassify_modules( __name__, recursive = True )

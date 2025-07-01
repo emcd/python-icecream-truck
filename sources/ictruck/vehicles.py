@@ -31,14 +31,14 @@ from . import exceptions as _exceptions
 from . import printers as _printers
 
 
-if __.typx.TYPE_CHECKING: # pragma: no cover
-    import _typeshed
+# if __.typx.TYPE_CHECKING: # pragma: no cover
+#     import _typeshed
 
 
 _installer_lock: __.threads.Lock = __.threads.Lock( )
 _registrar_lock: __.threads.Lock = __.threads.Lock( )
 _self_modulecfg: _cfg.ModuleConfiguration = _cfg.ModuleConfiguration(
-    flavors = __.ImmutableDictionary(
+    flavors = __.immut.Dictionary(
         note = _cfg.FlavorConfiguration( prefix_emitter = 'NOTE| ' ),
         error = _cfg.FlavorConfiguration( prefix_emitter = 'ERROR| ' ) ) )
 _validate_arguments = (
@@ -48,7 +48,7 @@ _validate_arguments = (
 
 
 class ModulesConfigurationsRegistry(
-    __.AccretiveDictionary[ str, _cfg.ModuleConfiguration ]
+    __.accret.Dictionary[ str, _cfg.ModuleConfiguration ]
 ):
     ''' Accretive dictionary specifically for module registrations. '''
 
@@ -76,16 +76,16 @@ ActiveFlavorsLiberal: __.typx.TypeAlias = __.typx.Union[
     __.cabc.Set[ _cfg.Flavor ],
 ]
 ActiveFlavorsRegistry: __.typx.TypeAlias = (
-    __.ImmutableDictionary[ str | None, ActiveFlavors ] )
+    __.immut.Dictionary[ str | None, ActiveFlavors ] )
 ActiveFlavorsRegistryLiberal: __.typx.TypeAlias = (
     __.cabc.Mapping[ str | None, ActiveFlavorsLiberal ] )
 ModulesConfigurationsRegistryLiberal: __.typx.TypeAlias = (
     __.cabc.Mapping[ str, _cfg.ModuleConfiguration ] )
 ReportersRegistry: __.typx.TypeAlias = (
-    __.AccretiveDictionary[
+    __.accret.Dictionary[
         tuple[ str, _cfg.Flavor ], _icecream.IceCreamDebugger ] )
 TraceLevelsRegistry: __.typx.TypeAlias = (
-    __.ImmutableDictionary[ str | None, int ] )
+    __.immut.Dictionary[ str | None, int ] )
 TraceLevelsRegistryLiberal: __.typx.TypeAlias = (
     __.cabc.Mapping[ str | None, int ] )
 
@@ -103,7 +103,7 @@ omniflavor: __.typx.Annotated[
 ] = Omniflavor.Instance
 
 
-class Truck( metaclass = __.ImmutableCompleteDataclass ):
+class Truck( __.immut.DataclassObject ):
     ''' Vends flavors of Icecream debugger. '''
 
     active_flavors: __.typx.Annotated[
@@ -154,7 +154,7 @@ class Truck( metaclass = __.ImmutableCompleteDataclass ):
                 override globals for that module.
             ''' ),
     ] = __.dcls.field(
-        default_factory = lambda: __.ImmutableDictionary( { None: -1 } ) )
+        default_factory = lambda: __.immut.Dictionary( { None: -1 } ) )
     _debuggers: __.typx.Annotated[
         ReportersRegistry,
         __.typx.Doc(
@@ -377,7 +377,7 @@ def active_flavors_from_environment(
         match flavors:
             case '*': active_flavors[ mname ] = omniflavor
             case _: active_flavors[ mname ] = flavors.split( ',' )
-    return __.ImmutableDictionary( {
+    return __.immut.Dictionary( {
         mname:
             flavors if isinstance( flavors, Omniflavor )
             else frozenset( flavors )
@@ -401,7 +401,7 @@ def trace_levels_from_environment(
                 f"in environment variable {name!r}." )
             continue
         trace_levels[ mname ] = int( level )
-    return __.ImmutableDictionary( trace_levels )
+    return __.immut.Dictionary( trace_levels )
 
 
 @_validate_arguments
@@ -486,7 +486,7 @@ def register_module(
             _exceptions.AttributeNondisplacement )
     nomargs: dict[ str, __.typx.Any ] = { }
     if not __.is_absent( flavors ):
-        nomargs[ 'flavors' ] = __.ImmutableDictionary( flavors )
+        nomargs[ 'flavors' ] = __.immut.Dictionary( flavors )
     if not __.is_absent( formatter_factory ):
         nomargs[ 'formatter_factory' ] = formatter_factory
     if not __.is_absent( include_context ):
@@ -505,13 +505,13 @@ def _add_truck_initarg_active_flavors(
     name = 'active_flavors'
     if not __.is_absent( active_flavors ):
         if isinstance( active_flavors, Omniflavor ):
-            initargs[ name ] = __.ImmutableDictionary(
+            initargs[ name ] = __.immut.Dictionary(
                 { None: active_flavors } )
         elif isinstance( active_flavors, ( __.cabc.Sequence,  __.cabc.Set ) ):
-            initargs[ name ] = __.ImmutableDictionary(
+            initargs[ name ] = __.immut.Dictionary(
                 { None: frozenset( active_flavors ) } )
         else:
-            initargs[ name ] = __.ImmutableDictionary( {
+            initargs[ name ] = __.immut.Dictionary( {
                 mname:
                     flavors if isinstance( flavors, Omniflavor )
                     else frozenset( flavors )
@@ -529,11 +529,11 @@ def _add_truck_initarg_trace_levels(
     name = 'trace_levels'
     if not __.is_absent( trace_levels ):
         if isinstance( trace_levels, int ):
-            initargs[ name ] = __.ImmutableDictionary( { None: trace_levels } )
+            initargs[ name ] = __.immut.Dictionary( { None: trace_levels } )
         else:
             trace_levels_: TraceLevelsRegistryLiberal = { None: -1 }
             trace_levels_.update( trace_levels )
-            initargs[ name ] = __.ImmutableDictionary( trace_levels_ )
+            initargs[ name ] = __.immut.Dictionary( trace_levels_ )
     elif evname_trace_levels is not None:
         initargs[ name ] = (
             trace_levels_from_environment( evname = evname_trace_levels ) )
@@ -565,7 +565,7 @@ def _calculate_effective_trace_level(
 
 def _calculate_ic_initargs(
     truck: Truck,
-    configuration: __.ImmutableDictionary[ str, __.typx.Any ],
+    configuration: __.immut.Dictionary[ str, __.typx.Any ],
     control: _cfg.FormatterControl,
     mname: str,
     flavor: _cfg.Flavor,
@@ -585,12 +585,12 @@ def _calculate_ic_initargs(
     return nomargs
 
 
-def _dict_from_dataclass(
-    obj: _typeshed.DataclassInstance
-) -> dict[ str, __.typx.Any ]:
+def _dict_from_dataclass( objct: object ) -> dict[ str, __.typx.Any ]:
+    # objct = __.typx.cast( _typeshed.DataclassInstance, objct )
     return {
-        field.name: getattr( obj, field.name )
-        for field in __.dcls.fields( obj ) }
+        field.name: getattr( objct, field.name )
+        for field in __.dcls.fields( objct ) # pyright: ignore[reportArgumentType]
+        if not field.name.startswith( '_' ) }
 
 
 def _discover_invoker_module_name( ) -> str:
@@ -615,9 +615,9 @@ def _iterate_module_name_ancestry( name: str ) -> __.cabc.Iterator[ str ]:
 
 
 def _merge_ic_configuration(
-    base: dict[ str, __.typx.Any ], update_obj: _typeshed.DataclassInstance
+    base: dict[ str, __.typx.Any ], update_objct: object,
 ) -> dict[ str, __.typx.Any ]:
-    update: dict[ str, __.typx.Any ] = _dict_from_dataclass( update_obj )
+    update: dict[ str, __.typx.Any ] = _dict_from_dataclass( update_objct )
     result: dict[ str, __.typx.Any ] = { }
     result[ 'flavors' ] = (
             dict( base.get( 'flavors', dict( ) ) )
@@ -631,12 +631,13 @@ def _merge_ic_configuration(
 
 def _produce_ic_configuration(
     vehicle: Truck, mname: str, flavor: _cfg.Flavor
-) -> __.ImmutableDictionary[ str, __.typx.Any ]:
+) -> __.immut.Dictionary[ str, __.typx.Any ]:
     fconfigs: list[ _cfg.FlavorConfiguration ] = [ ]
     vconfig = vehicle.generalcfg
     configd: dict[ str, __.typx.Any ] = {
         field.name: getattr( vconfig, field.name )
-        for field in __.dcls.fields( vconfig ) }
+        for field in __.dcls.fields( vconfig )
+        if not field.name.startswith( '_' ) }
     if flavor in vconfig.flavors:
         fconfigs.append( vconfig.flavors[ flavor ] )
     for mname_ in _iterate_module_name_ancestry( mname ):
@@ -650,4 +651,4 @@ def _produce_ic_configuration(
     # (Applied in top-down order for correct overrides.)
     for fconfig in fconfigs:
         configd = _merge_ic_configuration( configd, fconfig )
-    return __.ImmutableDictionary( configd )
+    return __.immut.Dictionary( configd )

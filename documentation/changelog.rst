@@ -23,6 +23,16 @@ Release Notes
 
 .. towncrier release notes start
 
+Ictruck 1.4 (2025-07-01)
+========================
+
+Enhancements
+------------
+
+- Apply Dynadoc to extract documentation annotations from class and function
+  signatures.
+
+
 Ictruck 1.3 (2025-06-05)
 ========================
 

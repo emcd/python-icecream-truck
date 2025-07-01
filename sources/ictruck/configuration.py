@@ -21,23 +21,12 @@
 ''' Portions of configuration hierarchy. '''
 
 
-from __future__ import annotations
-
 import icecream as _icecream
 
 from . import __
 
 
-def produce_default_flavors( ) -> __.ImmutableDictionary[
-    Flavor, FlavorConfiguration
-]:
-    ''' Produces flavors for trace depths 0 through 9. '''
-    return __.ImmutableDictionary( {
-        i: FlavorConfiguration(
-            prefix_emitter = f"TRACE{i}| " ) for i in range( 10 ) } )
-
-
-class FormatterControl( metaclass = __.ImmutableCompleteDataclass ):
+class FormatterControl( __.immut.DataclassObject ):
     ''' Contextual data for formatter and prefix factories. '''
 
     columns_count_effective: __.typx.Annotated[
@@ -51,7 +40,15 @@ class FormatterControl( metaclass = __.ImmutableCompleteDataclass ):
     ] = None
 
 
-class FlavorConfiguration( metaclass = __.ImmutableCompleteDataclass ):
+Flavor: __.typx.TypeAlias = int | str
+Formatter: __.typx.TypeAlias = __.typx.Callable[ [ __.typx.Any ], str ]
+FormatterFactory: __.typx.TypeAlias = (
+    __.typx.Callable[ [ FormatterControl, str, Flavor ], Formatter ] )
+PrefixEmitter: __.typx.TypeAlias = __.typx.Callable[ [ str, Flavor ], str ]
+PrefixEmitterUnion: __.typx.TypeAlias = str | PrefixEmitter
+
+
+class FlavorConfiguration( __.immut.DataclassObject ):
     ''' Per-flavor configuration. '''
 
     formatter_factory: __.typx.Annotated[
@@ -86,19 +83,22 @@ class FlavorConfiguration( metaclass = __.ImmutableCompleteDataclass ):
     ] = None
 
 
-Flavor: __.typx.TypeAlias = int | str
+def produce_default_flavors( ) -> __.immut.Dictionary[
+    Flavor, FlavorConfiguration
+]:
+    ''' Produces flavors for trace depths 0 through 9. '''
+    return __.immut.Dictionary( {
+        i: FlavorConfiguration(
+            prefix_emitter = f"TRACE{i}| " ) for i in range( 10 ) } )
+
+
 FlavorsRegistry: __.typx.TypeAlias = (
-    __.ImmutableDictionary[ Flavor, FlavorConfiguration ] )
+    __.immut.Dictionary[ Flavor, FlavorConfiguration ] )
 FlavorsRegistryLiberal: __.typx.TypeAlias = (
     __.cabc.Mapping[ Flavor, FlavorConfiguration ] )
-Formatter: __.typx.TypeAlias = __.typx.Callable[ [ __.typx.Any ], str ]
-FormatterFactory: __.typx.TypeAlias = (
-    __.typx.Callable[ [ FormatterControl, str, Flavor ], Formatter ] )
-PrefixEmitter: __.typx.TypeAlias = __.typx.Callable[ [ str, Flavor ], str ]
-PrefixEmitterUnion: __.typx.TypeAlias = str | PrefixEmitter
 
 
-class ModuleConfiguration( metaclass = __.ImmutableCompleteDataclass ):
+class ModuleConfiguration( __.immut.DataclassObject ):
     ''' Per-module or per-package configuration. '''
 
     flavors: __.typx.Annotated[
@@ -138,7 +138,7 @@ class ModuleConfiguration( metaclass = __.ImmutableCompleteDataclass ):
     ] = None
 
 
-class VehicleConfiguration( metaclass = __.ImmutableCompleteDataclass ):
+class VehicleConfiguration( __.immut.DataclassObject ):
     ''' Per-vehicle configuration. '''
 
     flavors: __.typx.Annotated[

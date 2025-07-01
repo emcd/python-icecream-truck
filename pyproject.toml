@@ -16,9 +16,9 @@ readme = { 'file' = 'README.rst', 'content-type' = 'text/x-rst' }
 requires-python = '>= 3.10'
 dependencies = [
   'absence~=1.1',
-  'accretive~=3.0',
+  'accretive~=4.0',
   'colorama',
-  'frigid~=3.0',
+  'frigid~=4.0',
   'icecream',
   'typing-extensions',
   # --- BEGIN: Injected by Copier ---
@@ -59,6 +59,7 @@ year-of-origin = 2025
 gha-runners = [
   '/home/runner/work/python-icecream-truck/python-icecream-truck/',
   '/Users/runner/work/python-icecream-truck/python-icecream-truck/',
+  'C:\a\python-icecream-truck\python-icecream-truck\',
   'D:\a\python-icecream-truck\python-icecream-truck\',
 ]
 [tool.coverage.run]
@@ -100,15 +101,14 @@ description = ''' Development environment. '''
 dependencies = [
   'Jinja2',
   'coverage[toml]',
-  'emcd-projects',
   'furo',
-  'icecream-truck[rich]',
   'packaging',
   'pre-commit',
   'pyfakefs',
   'pyright',
   'pytest',
   'pytest-mock',
+  'rich',
   'ruff',
   'sphinx',
   'sphinx-copybutton',

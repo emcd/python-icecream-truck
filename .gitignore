@@ -1,8 +1,11 @@
 .aider*
 .env
+.gemini
+.mcp.json
 .*.swp
 AGENTS.md
 CLAUDE.md
 CONVENTIONS.md
+GEMINI.md
 __pycache__/
 bugs/

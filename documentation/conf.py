@@ -10,8 +10,6 @@
         https://jareddillard.com/blog/common-ways-to-customize-sphinx-themes.html
 '''
 
-# ruff: noqa: E402,F401
-
 
 def _calculate_copyright_notice( ):
     from datetime import datetime as DateTime, timezone as TimeZone
@@ -79,6 +77,7 @@ nitpick_ignore = [
     ( 'py:class',
       "v, remove specified key and return the corresponding value." ),
     # Type annotation weirdnesses.
+    ( 'py:class', "_thread.allocate_lock" ),
     ( 'py:class', "Doc" ),
     ( 'py:class', "absence.objects.AbsentSingleton" ),
     ( 'py:class', "accretive.__.imports.Annotated" ),
@@ -86,12 +85,16 @@ nitpick_ignore = [
     ( 'py:class', "accretive.__.imports.V" ),
     ( 'py:class', "accretive.dictionaries.Annotated" ),
     ( 'py:class', "accretive.dictionaries.Dictionary" ),
+    ( 'py:class', "builtins.NotImplementedType" ),
+    ( 'py:class', "builtins.traceback" ),
     ( 'py:class', "collections.abc.Annotated" ),
-    ( 'py:class', "frigid.classes.Class" ),
-    ( 'py:class', "frigid.classes.CompleteDataclass" ),
+    ( 'py:class', "frigid.classes.DataclassObject" ),
+    ( 'py:class', "frigid.classes.Object" ),
     ( 'py:class', "frigid.dictionaries.Annotated" ),
     ( 'py:class', "frigid.dictionaries.Dictionary" ),
     ( 'py:class', "icecream.icecream.IceCreamDebugger" ),
+    ( 'py:class', "ictruck.__.nomina.H" ),
+    ( 'py:class', "ictruck.__.nomina.V" ),
     ( 'py:class', "ictruck.configuration.Annotated" ),
     ( 'py:class', "ictruck.recipes.rich.Annotated" ),
     ( 'py:class', "ictruck.recipes.sundae.Annotated" ),

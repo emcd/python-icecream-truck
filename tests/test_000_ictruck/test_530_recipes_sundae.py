@@ -19,13 +19,11 @@
 
 ''' Tests for sundae recipes module. '''
 
-# ruff: noqa: RUF001
-
 import re
 
+import accretive as accret
 import pytest
 
-from accretive.qaliases import AccretiveDictionary
 from rich.console import Console
 from rich.style import Style
 
@@ -351,7 +349,7 @@ def test_100_register_module(
     printer_factory = base.funct.partial(
         printers.produce_simple_printer, simple_output )
     truck = vehicles.produce_truck(
-        modulecfgs = AccretiveDictionary( ),
+        modulecfgs = accret.Dictionary( ),
         active_flavors = { 'note' },
         printer_factory = printer_factory
     ).install( )
@@ -374,7 +372,7 @@ def test_101_register_module_colorize_default(
     printer_factory = base.funct.partial(
         printers.produce_simple_printer, simple_output )
     truck = vehicles.produce_truck(
-        modulecfgs = AccretiveDictionary( ),
+        modulecfgs = accret.Dictionary( ),
         active_flavors = { 'note' },
         printer_factory = printer_factory
     ).install( )
@@ -400,7 +398,7 @@ def test_102_register_module_label_as_default(
     printer_factory = base.funct.partial(
         printers.produce_simple_printer, simple_output )
     truck = vehicles.produce_truck(
-        modulecfgs = AccretiveDictionary( ),
+        modulecfgs = accret.Dictionary( ),
         active_flavors = { 'note' },
         printer_factory = printer_factory
     ).install( )
@@ -420,14 +418,14 @@ def test_103_register_module_custom_styles(
     simple_output, clean_builtins,
 ):
     ''' End-to-end module registration works correctly. Custom styles. '''
-    custom_styles = base.AccretiveDictionary( {
+    custom_styles = base.accret.Dictionary( {
         # 'flavor': Style( color = 'magenta' ),
         'module_qname': Style( color = 'green' ),
     } )
     printer_factory = base.funct.partial(
         printers.produce_simple_printer, simple_output )
     truck = vehicles.produce_truck(
-        modulecfgs = AccretiveDictionary( ),
+        modulecfgs = accret.Dictionary( ),
         active_flavors = { 'note' },
         printer_factory = printer_factory
     ).install( )
@@ -458,7 +456,7 @@ def test_104_register_module_custom_template(
     printer_factory = base.funct.partial(
         printers.produce_simple_printer, simple_output )
     truck = vehicles.produce_truck(
-        modulecfgs = AccretiveDictionary( ),
+        modulecfgs = accret.Dictionary( ),
         active_flavors = { 'note' },
         printer_factory = printer_factory
     ).install( )
@@ -484,7 +482,7 @@ def test_105_register_module_custom_ts_format(
     printer_factory = base.funct.partial(
         printers.produce_simple_printer, simple_output )
     truck = vehicles.produce_truck(
-        modulecfgs = AccretiveDictionary( ),
+        modulecfgs = accret.Dictionary( ),
         active_flavors = { 'note' },
         printer_factory = printer_factory
     ).install( )

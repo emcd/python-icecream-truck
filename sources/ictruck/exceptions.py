@@ -25,15 +25,11 @@ from . import __
 
 
 class Omniexception(
-    BaseException,
-    metaclass = __.ImmutableClass,
-    decorators = ( __.immutable, ),
+    __.immut.Object, BaseException,
+    instances_visibles = (
+        '__cause__', '__context__', __.immut.is_public_identifier ),
 ):
     ''' Base for all exceptions raised by package API. '''
-    # TODO: Class and instance attribute concealment.
-
-    _attribute_visibility_includes_: __.cabc.Collection[ str ] = (
-        frozenset( ( '__cause__', '__context__', ) ) )
 
 
 class Omnierror( Omniexception, Exception ):
