@@ -44,7 +44,7 @@ from .vehicles import *
 
 
 __version__: str
-__version__ = '1.4a0'
+__version__ = '1.4'
 
 
 _dynadoc_introspection_control = (
