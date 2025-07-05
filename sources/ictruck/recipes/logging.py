@@ -21,7 +21,6 @@
 ''' Recipes for integration with standard logging. '''
 
 
-from __future__ import annotations
 
 import logging as _logging
 

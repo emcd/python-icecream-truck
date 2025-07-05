@@ -23,7 +23,6 @@
 # ruff: noqa: F401,F403
 
 
-from __future__ import annotations
 
 from .. import exceptions
 from ..__ import *

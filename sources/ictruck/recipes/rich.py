@@ -26,7 +26,6 @@
 '''
 
 
-from __future__ import annotations
 
 from rich.console import Console as _Console
 from rich.pretty import pretty_repr as _pretty_repr

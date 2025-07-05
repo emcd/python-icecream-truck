@@ -21,4 +21,3 @@
 ''' Useful icecream recipes which our trucks can vend. '''
 
 
-from __future__ import annotations

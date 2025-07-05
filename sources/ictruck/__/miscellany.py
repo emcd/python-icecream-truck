@@ -21,7 +21,6 @@
 ''' Miscellaneous package internals. '''
 
 
-from __future__ import annotations
 
 from . import imports as __
 

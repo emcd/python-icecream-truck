@@ -44,12 +44,7 @@ from .vehicles import *
 
 
 __version__: str
-__version__ = '1.4'
+__version__ = '1.5'
 
 
-_dynadoc_introspection_control = (
-    __.ddoc.IntrospectionControl(
-        targets = __.ddoc.IntrospectionTargetsOmni ) )
-__.ddoc.assign_module_docstring(
-    __name__, introspection = _dynadoc_introspection_control )
-__.immut.reclassify_modules( __name__, recursive = True )
+__.immut.finalize_module( __name__, recursive = True )
