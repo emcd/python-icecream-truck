@@ -1,5 +1,6 @@
 .aider*
 .env
+.claude
 .gemini
 .mcp.json
 .*.swp
