@@ -44,7 +44,7 @@ from .vehicles import *
 
 
 __version__: str
-__version__ = '1.5a0'
+__version__ = '1.5'
 
 
 __.immut.finalize_module( __name__, recursive = True )
