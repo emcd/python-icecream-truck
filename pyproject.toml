@@ -16,9 +16,9 @@ readme = { 'file' = 'README.rst', 'content-type' = 'text/x-rst' }
 requires-python = '>= 3.10'
 dependencies = [
   'absence~=1.1',
-  'accretive~=4.0',
+  'accretive~=4.1',
   'colorama',
-  'frigid~=4.0',
+  'frigid~=4.1',
   'icecream',
   'typing-extensions',
   # --- BEGIN: Injected by Copier ---
