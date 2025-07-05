@@ -23,6 +23,17 @@ Release Notes
 
 .. towncrier release notes start
 
+Ictruck 1.5 (2025-07-04)
+========================
+
+Enhancements
+------------
+
+- Prepare for deprecation of ``from __future__ import annotations``.
+- Use ``frigid.finalize_module`` instead of separate Dynadoc and Frigid calls to
+  finalize module. Simplifies finialization and avoids a deprecation warning.
+
+
 Ictruck 1.4 (2025-07-01)
 ========================
 
