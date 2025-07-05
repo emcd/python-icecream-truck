@@ -28,7 +28,6 @@
 # TODO? Allow selection of trace color gradients.
 
 
-from __future__ import annotations
 
 from rich.console import Console as _Console
 from rich.style import Style as _Style

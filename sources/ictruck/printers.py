@@ -21,7 +21,6 @@
 ''' Printers, printer factories, and auxiliary functions and types. '''
 
 
-from __future__ import annotations
 
 import colorama as _colorama
 

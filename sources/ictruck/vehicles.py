@@ -21,7 +21,6 @@
 ''' Vehicles which vend flavors of Icecream debugger. '''
 
 
-from __future__ import annotations
 
 import icecream as _icecream
 

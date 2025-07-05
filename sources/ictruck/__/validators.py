@@ -21,7 +21,6 @@
 ''' Validators for internal use. '''
 
 
-from __future__ import annotations
 
 from . import imports as __
 
